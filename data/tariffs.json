@@ -1,0 +1,24 @@
+{
+  "bbq_pp": 210,
+  "ac_addon": 1000,
+  "regular": {
+    "member_double": 5460,
+    "extra_adult": 2170,
+    "extra_child": 1085,
+    "member_senior_double": 4914,
+    "extra_adult_senior": 1953,
+    "temp_double": 9930,
+    "temp_extra_adult": 3727,
+    "temp_extra_child": 1863.5
+  },
+  "special": {
+    "member_double": 6552,
+    "extra_adult": 2604,
+    "extra_child": 1302,
+    "member_senior_double": 5896.8,
+    "extra_adult_senior": 2343.6,
+    "temp_double": 11868.8,
+    "temp_extra_adult": 4448.8,
+    "temp_extra_child": 2224.4
+  }
+}

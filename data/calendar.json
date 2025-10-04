@@ -1,0 +1,31 @@
+{
+  "2025": {
+    "special": [
+      {
+        "name": "Diwali Season",
+        "start": "2025-10-17",
+        "end": "2025-11-02"
+      },
+      {
+        "name": "Christmas/New Year",
+        "start": "2025-12-19",
+        "end": "2026-01-04"
+      }
+    ],
+    "seasons": [
+      {
+        "type": "summer",
+        "start": "2025-05-23",
+        "end": "2025-06-08"
+      }
+    ],
+    "closed": [
+      {
+        "start": "2025-06-30",
+        "end": "2025-10-14"
+      }
+    ],
+    "long_weekends": [],
+    "bbq_days": []
+  }
+}
