@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-IN">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -11,6 +11,8 @@
   <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/isoWeek.min.js"></script>
   <script>dayjs.extend(dayjs_plugin_isoWeek);</script>
+<script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/en-gb.js"></script>
+<script>dayjs.locale('en-gb');</script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -55,8 +57,8 @@
     <section class="card">
       <h2>Booking Details</h2>
       <div class="grid two">
-        <div><label>Check-in (12:00)</label><input id="checkin" type="date"></div>
-        <div><label>Check-out (09:00)</label><input id="checkout" type="date"></div>
+        <div><label>Check-in (12:00)</label><input id="checkin" type="date"lang="en-IN"></div>
+        <div><label>Check-out (09:00)</label><input id="checkout" type="date"lang="en-IN"></div>
         <div><label>Adults</label><input id="adults" type="number" min="1" value="2"></div>
         <div><label>Children (5–10)</label><input id="children" type="number" min="0" value="0"></div>
         <div><label>Veg Count</label><input id="vegCount" type="number" min="0" value="2"></div>
@@ -108,5 +110,9 @@
   </footer>
 
   <script src="app.js"></script>
+<script>
+  // Display-only format helper for Indian style dates
+  window.formatDateIN = d => dayjs(d).format('DD/MM/YYYY');
+</script>
 </body>
 </html>
