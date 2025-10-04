@@ -1,5 +1,6 @@
 let CONFIG=null; let STATE={member:null,rooms:[],tariffs:null,calendar:null,policies:null,promotions:[],selected:[]};
 const el=(id)=>document.getElementById(id); const fmtINR=(v)=> new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:0}).format(v);
+const fmtIN = d => dayjs(d).format('DD/MM/YYYY');
 
 async function loadConfig(){ try{ CONFIG=await (await fetch('config.json')).json(); }catch(e){ CONFIG=await (await fetch('config.example.json')).json(); } }
 async function loadPromotionsFromFirestore(){
