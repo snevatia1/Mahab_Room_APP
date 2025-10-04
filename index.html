@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Club Mahabaleshwar – Room Booking</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0f766e">
+  <link rel="icon" href="assets/logo.png">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/isoWeek.min.js"></script>
+  <script>dayjs.extend(dayjs_plugin_isoWeek);</script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <img src="assets/logo.png" alt="Club Logo" class="logo">
+    <div class="titles">
+      <h1>The Club Mahabaleshwar</h1>
+      <p class="subtitle">Member Room Booking</p>
+    </div>
+    <nav>
+      <a href="admin/" class="button ghost">Admin</a>
+      <a href="admin/promotions.html" class="button ghost">Promotions</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h2>Sign in / Member Validation</h2>
+      <p class="muted">Use member lookup or OTP (if enabled in config.json).</p>
+      <div class="grid two">
+        <div><label>Member ID</label><input id="memberId" placeholder="M1234"></div>
+        <div><label>Registered Phone (for OTP)</label><input id="memberPhone" placeholder="+91XXXXXXXXXX"></div>
+        <div><label>Registered Email</label><input id="memberEmail" type="email" placeholder="name@example.com"></div>
+        <div class="actions">
+          <button id="btnLookup" class="button">Lookup Member</button>
+          <button id="btnSendOtp" class="button secondary">Send OTP</button>
+          <button id="btnAnonymous" class="button ghost">Continue (Demo)</button>
+        </div>
+      </div>
+      <div id="otpBox" class="otpbox hidden">
+        <label>Enter OTP</label>
+        <input id="otpCode" placeholder="6-digit code">
+        <button id="btnVerifyOtp" class="button">Verify OTP</button>
+      </div>
+      <div id="memberInfo" class="notice hidden"></div>
+    </section>
+
+    <section class="card">
+      <h2>Booking Details</h2>
+      <div class="grid two">
+        <div><label>Check-in (12:00)</label><input id="checkin" type="date"></div>
+        <div><label>Check-out (09:00)</label><input id="checkout" type="date"></div>
+        <div><label>Adults</label><input id="adults" type="number" min="1" value="2"></div>
+        <div><label>Children (5–10)</label><input id="children" type="number" min="0" value="0"></div>
+        <div><label>Veg Count</label><input id="vegCount" type="number" min="0" value="2"></div>
+        <div><label>Non-Veg Count</label><input id="nvegCount" type="number" min="0" value="0"></div>
+        <div>
+          <label>Attributes</label>
+          <div class="chips">
+            <label><input type="checkbox" id="attrAC"> AC</label>
+            <label><input type="checkbox" id="attrWheel"> Wheelchair</label>
+            <label><input type="checkbox" id="attrPet"> Pet-friendly</label>
+          </div>
+        </div>
+        <div>
+          <label>Block Preference (optional)</label>
+          <select id="blockPref"><option value="">No preference</option></select>
+        </div>
+      </div>
+      <div class="actions"><button id="btnAvailability" class="button">Check Availability</button></div>
+      <div id="availability" class="table-wrap hidden"></div>
+    </section>
+
+    <section class="card">
+      <h2>Price Summary</h2>
+      <div id="priceSummary" class="table-wrap muted">Choose rooms and dates to calculate.</div>
+      <div class="actions">
+        <label><input type="checkbox" id="agreeRules"> I agree to booking rules and policies.</label>
+        <button id="btnPay" class="button" disabled>Confirm & Pay</button>
+        <button id="btnHold" class="button secondary">Request & Pay at Check-in</button>
+      </div>
+      <p class="muted small">Cancellation/Modification per policy. Checkout at 09:00 hrs.</p>
+    </section>
+
+    <section class="card">
+      <h3>Downloads / Data</h3>
+      <ul class="bullets">
+        <li><a href="data/members.csv" download>members.csv</a></li>
+        <li><a href="data/rooms.json" download>rooms.json</a></li>
+        <li><a href="data/tariffs.json" download>tariffs.json</a></li>
+        <li><a href="data/calendar.json" download>calendar.json</a></li>
+        <li><a href="data/policies.json" download>policies.json</a></li>
+        <li><a href="data/promotions.json" download>promotions.json</a></li>
+        <li><a href="docs/DEPLOY_GITHUB_PAGES.md" target="_blank">Deploy to GitHub Pages</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; <span id="year"></span> The Club Mahabaleshwar</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

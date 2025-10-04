@@ -1,0 +1,15 @@
+{
+  "name": "Club Mahabaleshwar \u2013 Booking",
+  "short_name": "Club Booking",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0b1116",
+  "theme_color": "#0f766e",
+  "icons": [
+    {
+      "src": "assets/logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}

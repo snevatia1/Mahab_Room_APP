@@ -1,0 +1,2 @@
+self.addEventListener('install',(e)=>{e.waitUntil(caches.open('club-cache-v1').then(cache=>cache.addAll(['./','./index.html','./styles.css','./app.js','./manifest.webmanifest','./data/rooms.json','./data/tariffs.json','./data/calendar.json','./data/policies.json','./data/members.csv','./data/promotions.json'])))});
+self.addEventListener('fetch',(event)=>{event.respondWith(caches.match(event.request).then((res)=>res||fetch(event.request)))})
