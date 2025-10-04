@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Promotions Manager</title>
+<link rel="icon" href="../assets/logo.png"><link rel="stylesheet" href="../styles.css">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script></head>
+<body>
+<header class="site-header"><div class="titles"><h1>Promotions Manager</h1><p class="subtitle">Create / Edit promos without touching code</p></div>
+<nav><a href="../" class="button ghost">Booking App</a><a href="./" class="button ghost">Admin Home</a></nav></header>
+<main class="container">
+<section class="card"><h2>Load & Save</h2><div class="actions">
+<button id="btnLoadJson" class="button">Load from promotions.json</button>
+<button id="btnImport" class="button secondary">Import JSON</button>
+<button id="btnExport" class="button">Export JSON</button>
+<button id="btnPublishFirestore" class="button secondary">Publish to Firestore</button>
+</div><p class="small muted">Use Export JSON and upload it to <code>data/promotions.json</code> on GitHub, or Publish to Firestore if configured in <code>config.json</code>.</p></section>
+<section class="card"><h2>New / Edit Promotion</h2><div class="grid two">
+<div><label>Name</label><input id="name"></div>
+<div><label>Internal ID</label><input id="id"></div>
+<div><label>Type</label><select id="type"><option value="percent">Percent</option><option value="flat">Flat (₹)</option><option value="bxgy">Buy X Get Y</option></select></div>
+<div><label>Value (Percent/Flat)</label><input id="value" type="number"></div>
+<div><label>Buy N (BxGy)</label><input id="buy_n" type="number"></div>
+<div><label>Get N (BxGy)</label><input id="get_n" type="number"></div>
+<div><label>Days of Week</label><select id="days_of_week" multiple><option>Mon</option><option>Tue</option><option>Wed</option><option>Thu</option><option>Fri</option><option>Sat</option><option>Sun</option></select></div>
+<div><label>Date Start</label><input id="date_start" placeholder="YYYY-MM-DD"></div>
+<div><label>Date End</label><input id="date_end" placeholder="YYYY-MM-DD"></div>
+<div><label>Blocks (A,B,C...)</label><input id="blocks"></div>
+<div><label>Rooms (A1,C7,...)</label><input id="rooms"></div>
+<div><label>Min Nights</label><input id="min_nights" type="number" value="1"></div>
+<div><label>Max Nights</label><input id="max_nights" type="number"></div>
+<div><label>Members only</label><input id="members_only" type="checkbox"></div>
+<div><label>Seniors only</label><input id="senior_only" type="checkbox"></div>
+<div><label>Stackable</label><input id="stackable" type="checkbox"></div>
+<div><label>Priority</label><input id="priority" type="number" value="10"></div>
+<div><label>Active</label><input id="active" type="checkbox"></div>
+</div><div class="actions"><button id="btnAdd" class="button">Add / Update</button><button id="btnReset" class="button ghost">Reset</button></div></section>
+<section class="card"><h2>Promotions List</h2><div id="list" class="table-wrap"></div></section>
+</main>
+<script>
+let PROMOS=[]; let CONFIG=null; let db=null;
+async function loadConfig(){ try{ CONFIG=await (await fetch('../config.json')).json(); }catch(e){ CONFIG=await (await fetch('../config.example.json')).json(); } if(CONFIG.firebase&&CONFIG.firebase.apiKey){ firebase.initializeApp(CONFIG.firebase); db=firebase.firestore(); } }
+function renderList(){ if(!PROMOS.length){ document.getElementById('list').innerHTML='<p class=muted>No promotions yet.</p>'; return;} const rows=PROMOS.map((p,i)=>`<tr><td>${p.active?'<span class=tag ok>Active</span>':'<span class=tag>Off</span>'}</td><td><strong>${p.name||''}</strong><div class=small>${p.id||''}</div></td><td>${p.type}</td><td>${p.type==='bxgy' ? ('Buy '+(p.buy_n||0)+' Get '+(p.get_n||0)) : (p.value||'—')}</td><td>${(p.conditions?.days_of_week||[]).join(',')}</td><td>${p.conditions?.date_start||''} → ${p.conditions?.date_end||''}</td><td>${(p.conditions?.blocks||[]).join(',')}</td><td>${(p.conditions?.rooms||[]).join(',')}</td><td>${p.priority||0}</td><td><button data-i='${i}' class='button secondary btnEdit'>Edit</button><button data-i='${i}' class='button ghost btnToggle'>${p.active?'Disable':'Enable'}</button><button data-i='${i}' class='button ghost btnDelete'>Delete</button></td></tr>`).join(''); document.getElementById('list').innerHTML=`<table class=table><thead><tr><th>Status</th><th>Name/ID</th><th>Type</th><th>Value</th><th>DOW</th><th>Dates</th><th>Blocks</th><th>Rooms</th><th>Priority</th><th>Actions</th></tr></thead><tbody>${rows}</tbody></table>`; document.querySelectorAll('.btnEdit').forEach(b=> b.addEventListener('click',e=> editPromo(parseInt(e.target.dataset.i)))); document.querySelectorAll('.btnToggle').forEach(b=> b.addEventListener('click',e=> togglePromo(parseInt(e.target.dataset.i)))); document.querySelectorAll('.btnDelete').forEach(b=> b.addEventListener('click',e=> deletePromo(parseInt(e.target.dataset.i)))); }
+function getForm(){ const val=id=>document.getElementById(id).value; const list=s=> s? s.split(',').map(x=>x.trim()).filter(Boolean):[]; const daysSel=[...document.getElementById('days_of_week').selectedOptions].map(o=>o.value); const type=val('type'); return { id: val('id') || (val('name')||'').toLowerCase().replace(/[^a-z0-9]+/g,'_'), name: val('name'), active: document.getElementById('active').checked, type, value: type!=='bxgy' ? (parseFloat(val('value')||'0')||0) : undefined, buy_n: type==='bxgy' ? (parseInt(val('buy_n')||'0',10)||0) : undefined, get_n: type==='bxgy' ? (parseInt(val('get_n')||'0',10)||0) : undefined, apply_to:'total', conditions:{ days_of_week: daysSel, date_start: val('date_start')||null, date_end: val('date_end')||null, blocks: list(val('blocks')), rooms: list(val('rooms')), members_only: document.getElementById('members_only').checked, senior_only: document.getElementById('senior_only').checked, min_nights: parseInt(val('min_nights')||'0',10)||1, max_nights: val('max_nights') ? (parseInt(val('max_nights'),10)||null) : null }, stackable: document.getElementById('stackable').checked, priority: parseInt(val('priority')||'10',10)||10 }; }
+function setForm(p){ document.getElementById('name').value=p.name||''; document.getElementById('id').value=p.id||''; document.getElementById('type').value=p.type||'percent'; document.getElementById('value').value=p.value||''; document.getElementById('buy_n').value=p.buy_n||''; document.getElementById('get_n').value=p.get_n||''; const daysSel=document.getElementById('days_of_week'); [...daysSel.options].forEach(o=> o.selected=(p.conditions?.days_of_week||[]).includes(o.value)); document.getElementById('date_start').value=p.conditions?.date_start||''; document.getElementById('date_end').value=p.conditions?.date_end||''; document.getElementById('blocks').value=(p.conditions?.blocks||[]).join(','); document.getElementById('rooms').value=(p.conditions?.rooms||[]).join(','); document.getElementById('min_nights').value=p.conditions?.min_nights||1; document.getElementById('max_nights').value=p.conditions?.max_nights||''; document.getElementById('members_only').checked=!!(p.conditions?.members_only); document.getElementById('senior_only').checked=!!(p.conditions?.senior_only); document.getElementById('stackable').checked=!!p.stackable; document.getElementById('priority').value=p.priority||10; document.getElementById('active').checked=!!p.active; }
+function resetForm(){ setForm({conditions:{days_of_week:[],blocks:[],rooms:[],min_nights:1}}); }
+function addOrUpdate(){ const obj=getForm(); const idx=PROMOS.findIndex(p=>p.id===obj.id); if(idx>=0) PROMOS[idx]=obj; else PROMOS.push(obj); renderList(); resetForm(); }
+function editPromo(i){ setForm(PROMOS[i]); window.scrollTo({top:0,behavior:'smooth'}); }
+function togglePromo(i){ PROMOS[i].active=!PROMOS[i].active; renderList(); }
+function deletePromo(i){ PROMOS.splice(i,1); renderList(); }
+function download(filename, text){ const a=document.createElement('a'); a.href='data:application/json;charset=utf-8,'+encodeURIComponent(text); a.download=filename; a.style.display='none'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
+async function loadFromJson(){ try{ const data=await (await fetch('../data/promotions.json?_='+Date.now())).json(); PROMOS=data.promotions||[]; renderList(); }catch(e){ alert('Could not load promotions.json'); } }
+function importFile(){ const inp=document.createElement('input'); inp.type='file'; inp.accept='.json,application/json'; inp.addEventListener('change', async(e)=>{ const f=e.target.files[0]; const text=await f.text(); try{ const data=JSON.parse(text); PROMOS=data.promotions||[]; renderList(); }catch(err){ alert('Invalid JSON'); } }); inp.click(); }
+function exportJson(){ download('promotions.json', JSON.stringify({promotions:PROMOS}, null, 2)); }
+async function publishToFirestore(){ if(!db){ alert('Firebase not configured. Add keys to config.json.'); return; } const batch=db.batch(); const col=db.collection('promotions'); const snap=await col.get(); snap.forEach(doc=> batch.delete(doc.ref)); PROMOS.forEach(p=>{ const ref=col.doc(p.id||('promo_'+Math.random().toString(36).slice(2))); batch.set(ref, p); }); await batch.commit(); alert('Published to Firestore.'); }
+document.getElementById('btnLoadJson').addEventListener('click', loadFromJson);
+document.getElementById('btnImport').addEventListener('click', importFile);
+document.getElementById('btnExport').addEventListener('click', exportJson);
+document.getElementById('btnPublishFirestore').addEventListener('click', publishToFirestore);
+document.getElementById('btnAdd').addEventListener('click', addOrUpdate);
+document.getElementById('btnReset').addEventListener('click', resetForm);
+(async function(){ await loadConfig(); await loadFromJson(); resetForm(); })();
+</script>
+</body></html>
