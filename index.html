@@ -4,115 +4,356 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>The Club Mahabaleshwar – Room Booking</title>
-  <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#0f766e">
+
+  <!-- Brand/theme: light, airy, terracotta accents -->
   <link rel="icon" href="assets/logo.png">
-  <link rel="stylesheet" href="styles.css">
+  <style>
+    :root{
+      --sky:#eaf7ff;          /* soft blue sky */
+      --leaf:#eef8ef;         /* very light green */
+      --terracotta:#d9a776;   /* terracotta accent */
+      --ink:#111;             /* text */
+      --muted:#6b7280;
+      --card:#ffffffcc;
+      --ok:#0a7a3e;
+      --warn:#b45309;
+      --border:#e5e7eb;
+      --shade:#f8fafc;
+      --chip:#f1f5f9;
+    }
+    html,body{height:100%}
+    body{
+      margin:0; color:var(--ink); font:16px/1.45 system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
+      /* flowing sky → green background */
+      background:
+        linear-gradient(180deg, var(--sky) 0%, var(--leaf) 50%, #fff 100%) fixed;
+    }
+    .site-header{
+      position:sticky; top:0; z-index:10; backdrop-filter:saturate(140%) blur(3px);
+      background:linear-gradient(90deg, #fff8 0, #fff8 60%, #fff0);
+      border-bottom:1px solid var(--border);
+    }
+    .bar{max-width:1100px;margin:auto;display:flex;gap:12px;align-items:center;padding:10px 16px}
+    .bar img{height:40px;width:auto;border-radius:8px}
+    .bar .titles h1{margin:0;font-size:clamp(18px,2.4vw,22px)}
+    .bar .titles p{margin:2px 0 0;color:var(--muted);font-size:13px}
+
+    .container{max-width:1100px;margin:18px auto;padding:0 16px}
+    .row{display:grid;grid-template-columns:1fr;gap:16px}
+    @media(min-width:900px){.row{grid-template-columns:1.2fr .8fr}}
+    .card{
+      background:var(--card); border:1px solid var(--border); border-radius:16px; padding:16px;
+      box-shadow:0 8px 24px #0000000c;
+    }
+    h2{margin:0 0 10px 0}
+    .muted{color:var(--muted)}
+
+    .button{appearance:none;border:1px solid var(--terracotta); background:var(--terracotta); color:#111; padding:10px 14px; border-radius:10px; font-weight:600; cursor:pointer}
+    .button.ghost{background:#fff; border:1px solid var(--terracotta); color:#111}
+    .button.small{padding:6px 10px; font-size:13px}
+
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .chips{display:flex;gap:8px;flex-wrap:wrap}
+    .chip{background:var(--chip);border:1px solid var(--border);padding:6px 10px;border-radius:999px;font-size:13px}
+
+    /* Calendar */
+    .cal{user-select:none}
+    .cal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+    .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+    .dow,.day{padding:6px 0;text-align:center;border-radius:8px}
+    .dow{color:var(--muted);font-size:12px}
+    .day{background:#fff;border:1px solid var(--border);cursor:pointer}
+    .day.out{opacity:.35}
+    .day.closed{background:#fff2f0;border-color:#fca5a5;color:#991b1b}
+    .day.sel{outline:2px solid var(--terracotta); box-shadow:0 0 0 2px #0000}
+    .day.range{background:#fff7ed}
+    .legend{display:flex;gap:12px;margin-top:8px}
+    .legend .box{width:12px;height:12px;border-radius:3px;border:1px solid var(--border);display:inline-block;vertical-align:middle;margin-right:6px}
+    .lg-open{background:#fff}
+    .lg-closed{background:#fff2f0;border-color:#fca5a5}
+    .lg-range{background:#fff7ed}
+
+    /* Availability lists */
+    .rooms{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px}
+    .tile{border:1px solid var(--border); border-radius:12px; padding:10px; background:#fff}
+    .tile.good{border-color:#16a34a}
+    .tile.partial{border-color:#f59e0b}
+    .kvs{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
+    .kv{font-size:12px;color:var(--muted)}
+
+    .notice{padding:10px;border:1px dashed var(--terracotta);border-radius:10px;background:#fff}
+    .footer{margin:28px auto 40px;color:var(--muted);font-size:13px;text-align:center}
+    .tag{display:inline-block;background:var(--terracotta);padding:3px 8px;border-radius:999px;font-size:12px;margin-left:8px}
+    .danger{color:#991b1b}
+  </style>
+
+  <!-- Day.js for date math + Indian display -->
   <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/isoWeek.min.js"></script>
-  <script>dayjs.extend(dayjs_plugin_isoWeek);</script>
-<script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/en-gb.js"></script>
-<script>dayjs.locale('en-gb');</script>
+  <script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/en-gb.js"></script>
+  <script>dayjs.locale('en-gb');</script>
+  <!-- Robust CSV parsing for members -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>
 <body>
   <header class="site-header">
-    <img src="assets/logo.png" alt="Club Logo" class="logo">
-    <div class="titles">
-      <h1>The Club Mahabaleshwar</h1>
-      <p class="subtitle">Member Room Booking</p>
+    <div class="bar">
+      <img src="assets/logo.png" alt="Club Logo">
+      <div class="titles">
+        <h1>The Club Mahabaleshwar <span class="tag">New</span></h1>
+        <p class="subtitle">Member Room Booking</p>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:8px">
+        <button id="btnLogin" class="button ghost small">Login</button>
+        <a class="button ghost small" href="admin/">Admin</a>
+        <a class="button ghost small" href="admin/promotions.html">Promotions</a>
+      </div>
     </div>
-    <nav>
-      <a href="admin/" class="button ghost">Admin</a>
-      <a href="admin/promotions.html" class="button ghost">Promotions</a>
-    </nav>
   </header>
 
-  <main class="container">
-    <section class="card">
-      <h2>Sign in / Member Validation</h2>
-      <p class="muted">Use member lookup or OTP (if enabled in config.json).</p>
-      <div class="grid two">
-        <div><label>Member ID</label><input id="memberId" placeholder="M1234"></div>
-        <div><label>Registered Phone (for OTP)</label><input id="memberPhone" placeholder="+91XXXXXXXXXX"></div>
-        <div><label>Registered Email</label><input id="memberEmail" type="email" placeholder="name@example.com"></div>
-        <div class="actions">
-          <button id="btnLookup" class="button">Lookup Member</button>
-          <button id="btnSendOtp" class="button secondary">Send OTP</button>
-          <button id="btnAnonymous" class="button ghost">Continue (Demo)</button>
-        </div>
-      </div>
-      <div id="otpBox" class="otpbox hidden">
-        <label>Enter OTP</label>
-        <input id="otpCode" placeholder="6-digit code">
-        <button id="btnVerifyOtp" class="button">Verify OTP</button>
-      </div>
-      <div id="memberInfo" class="notice hidden"></div>
-    </section>
+  <div class="container">
+    <div id="memberBanner" class="notice" style="display:none"></div>
 
-    <section class="card">
-      <h2>Booking Details</h2>
-      <div class="grid two">
-        <div><label>Check-in (12:00)</label><input id="checkin" type="date"lang="en-IN"></div>
-        <div><label>Check-out (09:00)</label><input id="checkout" type="date"lang="en-IN"></div>
-        <div><label>Adults</label><input id="adults" type="number" min="1" value="2"></div>
-        <div><label>Children (5–10)</label><input id="children" type="number" min="0" value="0"></div>
-        <div><label>Veg Count</label><input id="vegCount" type="number" min="0" value="2"></div>
-        <div><label>Non-Veg Count</label><input id="nvegCount" type="number" min="0" value="0"></div>
-        <div>
-          <label>Attributes</label>
-          <div class="chips">
-            <label><input type="checkbox" id="attrAC"> AC</label>
-            <label><input type="checkbox" id="attrWheel"> Wheelchair</label>
-            <label><input type="checkbox" id="attrPet"> Pet-friendly</label>
+    <div class="row">
+      <!-- LEFT: calendar + date pick -->
+      <section class="card">
+        <h2>Date selection</h2>
+        <p class="muted" id="calHelp">Login to view availability calendar. Select <b>Check-in</b> → <b>Check-out</b>.</p>
+
+        <div id="calendarWrap" class="cal" style="display:none">
+          <div class="cal-head">
+            <div>
+              <button id="prevMonth" class="button ghost small">◀</button>
+              <button id="nextMonth" class="button ghost small">▶</button>
+            </div>
+            <div><b id="calTitle"></b></div>
+            <div>
+              <span class="chip">CI: <span id="ciTxt">–</span></span>
+              <span class="chip">CO: <span id="coTxt">–</span></span>
+            </div>
+          </div>
+          <div class="cal-grid" id="calDow"></div>
+          <div class="cal-grid" id="calDays"></div>
+          <div class="legend">
+            <span><span class="box lg-open"></span>Open</span>
+            <span><span class="box lg-closed"></span>Closed</span>
+            <span><span class="box lg-range"></span>Selected range</span>
           </div>
         </div>
-        <div>
-          <label>Block Preference (optional)</label>
-          <select id="blockPref"><option value="">No preference</option></select>
+      </section>
+
+      <!-- RIGHT: availability results -->
+      <section class="card">
+        <h2>Availability</h2>
+        <p class="muted" id="availHelp">Pick your dates to see rooms. “Partial” means available for some nights in the range.</p>
+        <div id="availFull"></div>
+        <div id="availPartial" style="margin-top:10px"></div>
+      </section>
+    </div>
+
+    <section class="card" style="margin-top:16px">
+      <h2>Summary</h2>
+      <div id="summary" class="muted">Select your dates from the calendar above.</div>
+    </section>
+
+    <p class="footer">Data is read from <code>/data/rooms.json</code>, <code>/data/calendar.json</code>, and <code>/data/members.csv</code>. No server required.</p>
+  </div>
+
+  <script>
+  // ---------- tiny helpers ----------
+  const $ = sel => document.querySelector(sel);
+  const $$ = sel => document.querySelectorAll(sel);
+  const fmtIN = d => dayjs(d).format('DD/MM/YYYY');
+
+  // Stateful data
+  const STATE = {
+    member:null,
+    rooms:[],
+    calendar:{closed:[], roomClosed:{}}, // supports global and per-room closures
+    sel:{ci:null, co:null},
+    view: dayjs().startOf('month')
+  };
+
+  // ---------- members (login) ----------
+  async function login(){
+    const id = prompt('Enter Member ID (or leave blank for demo):')?.trim();
+    if(!id){
+      STATE.member = { id:'Guest', name:'Guest', isMember:false };
+      afterLogin(); return;
+    }
+    try{
+      const csv = await (await fetch('data/members.csv')).text();
+      const res = Papa.parse(csv, {header:true, skipEmptyLines:true});
+      const row = res.data.find(r => (r.id||r.ID||r.member_id||'').trim().toLowerCase() === id.toLowerCase());
+      if(row){
+        STATE.member = { id, name: row.name || row.Name || row.fullname || 'Member', isMember:true };
+      }else{
+        alert('Member not found. Continuing as guest.'); 
+        STATE.member = { id:'Guest', name:'Guest', isMember:false };
+      }
+    }catch(e){
+      console.error(e);
+      alert('Could not read members.csv. Continuing as guest.');
+      STATE.member = { id:'Guest', name:'Guest', isMember:false };
+    }
+    afterLogin();
+  }
+  function afterLogin(){
+    $('#memberBanner').style.display='block';
+    $('#memberBanner').innerHTML = STATE.member.isMember
+      ? `Hello <b>${STATE.member.name}</b> (ID: ${STATE.member.id}). The live availability calendar is now visible.`
+      : `Continuing in demo mode.`;
+    $('#calendarWrap').style.display='block';
+    $('#calHelp').style.display='none';
+  }
+
+  // ---------- load data ----------
+  async function loadData(){
+    try{
+      const roomsJ = await (await fetch('data/rooms.json')).json();
+      STATE.rooms = Array.isArray(roomsJ) ? roomsJ : (roomsJ.rooms||[]);
+    }catch(e){ console.warn('rooms.json missing/invalid', e); }
+
+    try{
+      const calJ = await (await fetch('data/calendar.json')).json();
+      // Accepts both simple {"closed":[{start,end},...]} and extended {"roomClosed":{"101":[{start,end}]}}
+      STATE.calendar.closed = calJ.closed || calJ.globalClosed || [];
+      STATE.calendar.roomClosed = calJ.roomClosed || {};
+    }catch(e){ console.warn('calendar.json missing/invalid', e); }
+
+    renderMonth();
+    paintAvailability();
+  }
+
+  // ---------- calendar render/select ----------
+  const DOW = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  function renderMonth(){
+    $('#calTitle').textContent = STATE.view.format('MMMM YYYY');
+    // DOW header
+    const dow = $('#calDow'); dow.innerHTML='';
+    DOW.forEach(d=>{const s=document.createElement('div'); s.className='dow'; s.textContent=d; dow.appendChild(s);});
+
+    // Days grid
+    const cont = $('#calDays'); cont.innerHTML='';
+    const start = STATE.view.startOf('month');
+    const end   = STATE.view.endOf('month');
+    const offset = (start.isoWeekday()+6)%7; // Monday-first grid
+    // blanks
+    for(let i=0;i<offset;i++){ const p=document.createElement('div'); p.className='day out'; p.textContent=''; cont.appendChild(p); }
+    // days
+    for(let d=start; d.isBefore(end) || d.isSame(end,'day'); d=d.add(1,'day')){
+      const cell=document.createElement('div'); cell.className='day'; cell.dataset.iso=d.format('YYYY-MM-DD'); cell.textContent=d.format('D');
+      if(isClosed(d)) cell.classList.add('closed');
+      if(inRange(d))  cell.classList.add('range');
+      if(isEdge(d))   cell.classList.add('sel');
+      cell.onclick = () => pick(d);
+      cont.appendChild(cell);
+    }
+    // update labels
+    $('#ciTxt').textContent = STATE.sel.ci ? fmtIN(STATE.sel.ci) : '–';
+    $('#coTxt').textContent = STATE.sel.co ? fmtIN(STATE.sel.co) : '–';
+  }
+  function isClosed(d){
+    const iso=d.format('YYYY-MM-DD');
+    const hits = STATE.calendar.closed?.some(r => between(iso, r.start, r.end));
+    return !!hits;
+  }
+  function pick(d){
+    if(!STATE.sel.ci || (STATE.sel.ci && STATE.sel.co)) {
+      STATE.sel = {ci: d.startOf('day'), co:null};
+    } else if(d.isBefore(STATE.sel.ci,'day')) {
+      STATE.sel = {ci: d.startOf('day'), co:null};
+    } else {
+      STATE.sel.co = d.startOf('day').add(1,'day'); // checkout is next morning
+    }
+    renderMonth();
+    paintAvailability();
+  }
+  function inRange(d){
+    const {ci,co}=STATE.sel; if(!ci||!co) return false;
+    return d.isSame(ci,'day') || d.isSame(co.add(-1,'day'),'day') || (d.isAfter(ci,'day') && d.isBefore(co.add(-1,'day'),'day'));
+  }
+  function isEdge(d){
+    const {ci,co}=STATE.sel; if(!ci) return false;
+    if(co) return d.isSame(ci,'day')||d.isSame(co.add(-1,'day'),'day');
+    return d.isSame(ci,'day');
+  }
+  function between(iso, a, b){ return iso >= a && iso <= b; }
+  function nightsArray(){
+    const {ci,co}=STATE.sel; const out=[];
+    if(!ci||!co) return out;
+    for(let d=ci.clone(); d.isBefore(co,'day'); d=d.add(1,'day')) out.push(d.format('YYYY-MM-DD'));
+    return out;
+  }
+
+  // ---------- availability ----------
+  function roomClosedOn(roomId, iso){
+    const list=(STATE.calendar.roomClosed?.[roomId]||[]);
+    return list.some(r=>between(iso,r.start,r.end)) || isClosed(dayjs(iso));
+  }
+  function roomStatus(room){
+    const nights=nightsArray(); if(!nights.length) return 'none';
+    let open=0; for(const n of nights){ if(!roomClosedOn(room.id||room.number||room.name, n)) open++; }
+    if(open===0) return 'closed';
+    if(open===nights.length) return 'full';
+    return 'partial';
+  }
+  function paintAvailability(){
+    const {ci,co}=STATE.sel;
+    $('#summary').innerHTML = (ci&&co)
+      ? `Your dates: <b>${fmtIN(ci)}</b> → <b>${fmtIN(co)}</b> (${nightsArray().length} nights)`
+      : `Select your dates from the calendar above.`;
+
+    const fullWrap = $('#availFull'); const partWrap = $('#availPartial');
+    fullWrap.innerHTML=''; partWrap.innerHTML='';
+
+    if(!ci||!co){ return; }
+
+    const full=[], partial=[];
+    for(const r of STATE.rooms){
+      const st = roomStatus(r);
+      if(st==='full')    full.push(r);
+      else if(st==='partial') partial.push(r);
+    }
+
+    // FULL
+    fullWrap.innerHTML = `<h3>Fully available</h3>` + renderTiles(full, 'good', 'Available all nights');
+
+    // PARTIAL
+    partWrap.innerHTML = partial.length
+      ? `<h3>Partially available</h3>${renderTiles(partial, 'partial', 'Some nights unavailable')}`
+      : `<div class="muted">No partial rooms for the chosen dates.</div>`;
+  }
+  function renderTiles(list, cls, badge){
+    if(!list.length) return `<div class="muted">No rooms match.</div>`;
+    return `<div class="rooms">` + list.map(r=>{
+      const id = r.id || r.number || r.name;
+      const block = r.block || r.b || '';
+      const cap = r.max || r.capacity || r.max_adults || '';
+      const ac = (r.ac===true || r.isAC===true) ? 'AC' : (r.ac===false? 'Non-AC' : '');
+      return `<div class="tile ${cls}">
+        <div><b>${id}</b> ${block?`<span class="chip">Block ${block}</span>`:''}</div>
+        <div class="kvs">
+          ${ac?`<span class="kv">${ac}</span>`:''}
+          ${cap?`<span class="kv">Max ${cap} adults</span>`:''}
         </div>
-      </div>
-      <div class="actions"><button id="btnAvailability" class="button">Check Availability</button></div>
-      <div id="availability" class="table-wrap hidden"></div>
-    </section>
+        <div class="muted" style="margin-top:6px">${badge}</div>
+      </div>`;
+    }).join('') + `</div>`;
+  }
 
-    <section class="card">
-      <h2>Price Summary</h2>
-      <div id="priceSummary" class="table-wrap muted">Choose rooms and dates to calculate.</div>
-      <div class="actions">
-        <label><input type="checkbox" id="agreeRules"> I agree to booking rules and policies.</label>
-        <button id="btnPay" class="button" disabled>Confirm & Pay</button>
-        <button id="btnHold" class="button secondary">Request & Pay at Check-in</button>
-      </div>
-      <p class="muted small">Cancellation/Modification per policy. Checkout at 09:00 hrs.</p>
-    </section>
+  // ---------- month navigation ----------
+  $('#prevMonth').addEventListener('click', ()=>{ STATE.view=STATE.view.add(-1,'month'); renderMonth(); });
+  $('#nextMonth').addEventListener('click', ()=>{ STATE.view=STATE.view.add(+1,'month'); renderMonth(); });
 
-    <section class="card">
-      <h3>Downloads / Data</h3>
-      <ul class="bullets">
-        <li><a href="data/members.csv" download>members.csv</a></li>
-        <li><a href="data/rooms.json" download>rooms.json</a></li>
-        <li><a href="data/tariffs.json" download>tariffs.json</a></li>
-        <li><a href="data/calendar.json" download>calendar.json</a></li>
-        <li><a href="data/policies.json" download>policies.json</a></li>
-        <li><a href="data/promotions.json" download>promotions.json</a></li>
-        <li><a href="docs/DEPLOY_GITHUB_PAGES.md" target="_blank">Deploy to GitHub Pages</a></li>
-      </ul>
-    </section>
-  </main>
-
-  <footer class="site-footer">
-    <p>&copy; <span id="year"></span> The Club Mahabaleshwar</p>
-  </footer>
-
-  <script src="app.js"></script>
-<script>
-  // Display-only format helper for Indian style dates
-  window.formatDateIN = d => dayjs(d).format('DD/MM/YYYY');
-</script>
+  // ---------- boot ----------
+  (async function init(){
+    // DOW header scaffold once
+    renderMonth(); // renders empty until login
+    // Login button
+    $('#btnLogin').addEventListener('click', login);
+    // Preload data so it’s instant after login
+    await loadData();
+  })();
+  </script>
 </body>
 </html>
