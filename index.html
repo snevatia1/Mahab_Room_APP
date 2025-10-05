@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>The Club Mahabaleshwar – Room Booking</title>
-
-  <!-- Brand/theme: light, airy, terracotta accents -->
   <link rel="icon" href="assets/logo.png">
+
+  <!-- Light, airy brand theme -->
   <style>
     :root{
       --sky:#eaf7ff;          /* soft blue sky */
@@ -23,14 +23,14 @@
     }
     html,body{height:100%}
     body{
-      margin:0; color:var(--ink); font:16px/1.45 system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
-      /* flowing sky → green background */
-      background:
-        linear-gradient(180deg, var(--sky) 0%, var(--leaf) 50%, #fff 100%) fixed;
+      margin:0; color:var(--ink); font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans","Apple Color Emoji","Segoe UI Emoji";
+      background:linear-gradient(180deg,var(--sky) 0%, var(--leaf) 55%, #fff 100%) fixed;
     }
+    a{color:inherit}
+
     .site-header{
       position:sticky; top:0; z-index:10; backdrop-filter:saturate(140%) blur(3px);
-      background:linear-gradient(90deg, #fff8 0, #fff8 60%, #fff0);
+      background:linear-gradient(90deg,#fff8 0,#fff8 60%,#fff0);
       border-bottom:1px solid var(--border);
     }
     .bar{max-width:1100px;margin:auto;display:flex;gap:12px;align-items:center;padding:10px 16px}
@@ -51,6 +51,7 @@
     .button{appearance:none;border:1px solid var(--terracotta); background:var(--terracotta); color:#111; padding:10px 14px; border-radius:10px; font-weight:600; cursor:pointer}
     .button.ghost{background:#fff; border:1px solid var(--terracotta); color:#111}
     .button.small{padding:6px 10px; font-size:13px}
+    .tag{display:inline-block;background:var(--terracotta);padding:3px 8px;border-radius:999px;font-size:12px;margin-left:8px}
 
     .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
     .chips{display:flex;gap:8px;flex-wrap:wrap}
@@ -83,15 +84,12 @@
 
     .notice{padding:10px;border:1px dashed var(--terracotta);border-radius:10px;background:#fff}
     .footer{margin:28px auto 40px;color:var(--muted);font-size:13px;text-align:center}
-    .tag{display:inline-block;background:var(--terracotta);padding:3px 8px;border-radius:999px;font-size:12px;margin-left:8px}
-    .danger{color:#991b1b}
   </style>
 
-  <!-- Day.js for date math + Indian display -->
+  <!-- Day.js (Indian display) + PapaParse for CSV members -->
   <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dayjs@1/locale/en-gb.js"></script>
   <script>dayjs.locale('en-gb');</script>
-  <!-- Robust CSV parsing for members -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 </head>
 <body>
@@ -103,7 +101,9 @@
         <p class="subtitle">Member Room Booking</p>
       </div>
       <div style="margin-left:auto;display:flex;gap:8px">
-        <button id="btnLogin" class="button ghost small">Login</button>
+        <!-- inline onclick ensures it works even if listener binding is blocked by cache -->
+        <button id="btnLogin" class="button ghost small" onclick="login()">Login</button>
+        <button id="btnDemo"  class="button ghost small" onclick="demo()">Demo</button>
         <a class="button ghost small" href="admin/">Admin</a>
         <a class="button ghost small" href="admin/promotions.html">Promotions</a>
       </div>
@@ -159,12 +159,15 @@
   </div>
 
   <script>
+  // ---------- version (helps bypass stale caches on data fetches) ----------
+  const APP_VERSION = '20251005c';
+
   // ---------- tiny helpers ----------
   const $ = sel => document.querySelector(sel);
   const $$ = sel => document.querySelectorAll(sel);
   const fmtIN = d => dayjs(d).format('DD/MM/YYYY');
 
-  // Stateful data
+  // ---------- state ----------
   const STATE = {
     member:null,
     rooms:[],
@@ -173,21 +176,19 @@
     view: dayjs().startOf('month')
   };
 
-  // ---------- members (login) ----------
+  // ---------- login / demo ----------
   async function login(){
     const id = prompt('Enter Member ID (or leave blank for demo):')?.trim();
-    if(!id){
-      STATE.member = { id:'Guest', name:'Guest', isMember:false };
-      afterLogin(); return;
-    }
+    if(!id){ return demo(); }
+
     try{
-      const csv = await (await fetch('data/members.csv')).text();
+      const csv = await (await fetch('data/members.csv?v='+APP_VERSION, {cache:'no-store'})).text();
       const res = Papa.parse(csv, {header:true, skipEmptyLines:true});
       const row = res.data.find(r => (r.id||r.ID||r.member_id||'').trim().toLowerCase() === id.toLowerCase());
       if(row){
         STATE.member = { id, name: row.name || row.Name || row.fullname || 'Member', isMember:true };
       }else{
-        alert('Member not found. Continuing as guest.'); 
+        alert('Member not found. Continuing as guest.');
         STATE.member = { id:'Guest', name:'Guest', isMember:false };
       }
     }catch(e){
@@ -195,6 +196,10 @@
       alert('Could not read members.csv. Continuing as guest.');
       STATE.member = { id:'Guest', name:'Guest', isMember:false };
     }
+    afterLogin();
+  }
+  function demo(){
+    STATE.member = { id:'Guest', name:'Guest', isMember:false };
     afterLogin();
   }
   function afterLogin(){
@@ -209,13 +214,13 @@
   // ---------- load data ----------
   async function loadData(){
     try{
-      const roomsJ = await (await fetch('data/rooms.json')).json();
+      const roomsJ = await (await fetch('data/rooms.json?v='+APP_VERSION, {cache:'no-store'})).json();
       STATE.rooms = Array.isArray(roomsJ) ? roomsJ : (roomsJ.rooms||[]);
     }catch(e){ console.warn('rooms.json missing/invalid', e); }
 
     try{
-      const calJ = await (await fetch('data/calendar.json')).json();
-      // Accepts both simple {"closed":[{start,end},...]} and extended {"roomClosed":{"101":[{start,end}]}}
+      const calJ = await (await fetch('data/calendar.json?v='+APP_VERSION, {cache:'no-store'})).json();
+      // Accept both simple {"closed":[{start,end}]} and extended {"roomClosed":{"101":[{start,end}]}}
       STATE.calendar.closed = calJ.closed || calJ.globalClosed || [];
       STATE.calendar.roomClosed = calJ.roomClosed || {};
     }catch(e){ console.warn('calendar.json missing/invalid', e); }
@@ -224,7 +229,7 @@
     paintAvailability();
   }
 
-  // ---------- calendar render/select ----------
+  // ---------- calendar render / select ----------
   const DOW = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
   function renderMonth(){
     $('#calTitle').textContent = STATE.view.format('MMMM YYYY');
@@ -254,8 +259,7 @@
   }
   function isClosed(d){
     const iso=d.format('YYYY-MM-DD');
-    const hits = STATE.calendar.closed?.some(r => between(iso, r.start, r.end));
-    return !!hits;
+    return !!STATE.calendar.closed?.some(r => between(iso, r.start, r.end));
   }
   function pick(d){
     if(!STATE.sel.ci || (STATE.sel.ci && STATE.sel.co)) {
@@ -347,12 +351,11 @@
 
   // ---------- boot ----------
   (async function init(){
-    // DOW header scaffold once
-    renderMonth(); // renders empty until login
-    // Login button
+    renderMonth();              // scaffold once
+    await loadData();           // preload data
+    // also bind (redundant to onclick) in case you remove inline handlers later
     $('#btnLogin').addEventListener('click', login);
-    // Preload data so it’s instant after login
-    await loadData();
+    $('#btnDemo').addEventListener('click', demo);
   })();
   </script>
 </body>
