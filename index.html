@@ -5,27 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>The Club Mahabaleshwar – Member Room Booking</title>
 
-  <!-- Minimal soft background (green → sky) -->
   <style>
     :root{
-      --brand:#0f766e; --ink:#111827; --muted:#6b7280;
-      --card:#ffffff; --ring:#e5e7eb; --ring-strong:#cbd5e1;
-      --accent:#16a34a; --accent-2:#0284c7; --accent-3:#c2410c;
-      --chip:#eef2ff; --chip-t:#3730a3; --sel:#dcfce7; --partial:#fff7ed; --closed:#fee2e2;
+      --ink:#111827; --muted:#6b7280; --card:#ffffff;
+      --ring:#e5e7eb; --ring-strong:#cbd5e1;
+      --accent:#16a34a; --accent2:#0284c7; --accent3:#c2410c;
+      --chip:#eef2ff; --chip-t:#3730a3;
+      --sel:#dcfce7; --partial:#fff7ed; --closed:#fee2e2;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
-      margin:0;color:var(--ink); font:16px/1.45 system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      margin:0; color:var(--ink);
+      font:16px/1.45 system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
       background: linear-gradient(180deg,#edf7f2 0%, #e6f4ff 60%, #fff5ee 100%);
     }
     .wrap{max-width:1120px;margin:0 auto;padding:16px 16px 64px}
-    .site-header{
-      display:flex;align-items:center;gap:12px;margin:8px 0 20px;
-    }
-    .brand-swatch{
-      width:34px;height:34px;border-radius:8px;background:#74c7a7;box-shadow:0 4px 14px #0000001a;
-    }
+    .site-header{display:flex;align-items:center;gap:12px;margin:8px 0 20px}
+    .logo{width:36px;height:36px;border-radius:8px;object-fit:cover;box-shadow:0 4px 14px #0001}
     .site-title{font-weight:700;font-size:20px}
     .badgenew{font-size:12px;background:#fef9c3;color:#854d0e;border:1px solid #fde68a;border-radius:999px;padding:2px 8px;margin-left:6px}
     .head-actions{margin-left:auto;display:flex;gap:8px}
@@ -35,7 +32,7 @@
     .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
     .card{background:var(--card);border:1px solid var(--ring);border-radius:16px;padding:16px;box-shadow:0 6px 24px #00000010}
     .grid{display:grid;gap:16px}
-    @media (min-width:900px){ .grid-2{grid-template-columns:1.1fr .9fr} }
+    @media (min-width:900px){ .grid-2{grid-template-columns:1.05fr .95fr} }
 
     /* Calendar */
     .cal-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
@@ -45,7 +42,7 @@
     .cal{border:1px solid var(--ring);border-radius:14px;padding:8px}
     .cal-grid{
       display:grid;grid-template-columns:repeat(7, minmax(42px,1fr));gap:6px;
-      grid-auto-rows:70px; /* Big enough to be clearly visible */
+      grid-auto-rows:56px; /* tuned smaller so it doesn’t dominate */
     }
     .dow{font-size:12px;color:var(--muted);text-align:center;margin:6px 0}
     .cell{
@@ -63,19 +60,26 @@
     .status-row{display:flex;gap:10px;align-items:center}
     .tiny{font-size:12px}
 
-    /* Hidden legacy controls (kept for app.js compatibility) */
-    .legacy{display:none}
-    footer{margin-top:22px;color:var(--muted);font-size:12px}
     .summary-box{min-height:64px}
+
+    /* Booking details grid */
+    .form-grid{display:grid;grid-template-columns:repeat(2,minmax(160px,1fr));gap:12px}
+    .form-grid label{font-size:13px;color:var(--muted);display:block;margin-bottom:4px}
+    .form-grid input[type=number], .form-grid select{
+      width:100%;padding:8px 10px;border:1px solid var(--ring-strong);border-radius:10px;background:#fff
+    }
+    .chipbox{display:flex;gap:14px;align-items:center}
+    .legacy{display:none} /* hidden inputs kept for app.js compatibility */
+    footer{margin-top:22px;color:var(--muted);font-size:12px}
   </style>
 
-  <!-- Day.js + plugins (no install needed) -->
+  <!-- Day.js for calendar rendering (no installs) -->
   <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/isoWeek.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/customParseFormat.min.js"></script>
   <script>dayjs.extend(dayjs_plugin_isoWeek); dayjs.extend(dayjs_plugin_customParseFormat);</script>
 
-  <!-- Razorpay/Firebase scripts (your app.js expects these; leave as-is) -->
+  <!-- Keep these because app.js expects them -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -84,7 +88,7 @@
 <body>
   <div class="wrap">
     <header class="site-header">
-      <div class="brand-swatch"></div>
+      <img src="assets/logo.png" alt="Club Logo" class="logo" onerror="this.style.display='none'">
       <div class="site-title">The Club Mahabaleshwar <span class="badgenew">New</span></div>
       <div class="head-actions">
         <button class="btn" id="btnLogin">Login</button>
@@ -97,6 +101,7 @@
     <p id="demoBanner" class="card tiny" style="display:none;">Continuing in demo mode.</p>
 
     <div class="grid grid-2">
+      <!-- LEFT: Date selection + booking details -->
       <section class="card">
         <h2>Date selection</h2>
 
@@ -126,12 +131,47 @@
           <span class="chip" style="background:var(--sel);border-color:#bbf7d0;color:#166534">Selected range</span>
         </div>
 
-        <p class="note">Pick check-in then check-out. “Partial” = available for some nights within the ranges defined by the club calendar.</p>
+        <p class="note">Pick check-in then check-out. “Partial” = available some nights within club calendar rules.</p>
+
+        <!-- Booking details the old app.js expects -->
+        <h3 style="margin:14px 0 8px">Booking details</h3>
+        <div class="form-grid">
+          <div>
+            <label for="adults">Adults</label>
+            <input id="adults" type="number" min="1" value="2" />
+          </div>
+          <div>
+            <label for="children">Children (5–10)</label>
+            <input id="children" type="number" min="0" value="0" />
+          </div>
+          <div>
+            <label for="vegCount">Veg Count</label>
+            <input id="vegCount" type="number" min="0" value="2" />
+          </div>
+          <div>
+            <label for="nonvegCount">Non-Veg Count</label>
+            <input id="nonvegCount" type="number" min="0" value="0" />
+          </div>
+          <div class="chipbox" style="grid-column:1/-1">
+            <label class="tiny">Attributes:</label>
+            <label><input id="attrAC" type="checkbox"> AC</label>
+            <label><input id="attrWheel" type="checkbox"> Wheelchair</label>
+            <label><input id="attrPet" type="checkbox"> Pet-friendly</label>
+          </div>
+          <div style="grid-column:1/-1">
+            <label for="blockPref">Block Preference (optional)</label>
+            <select id="blockPref">
+              <option value="">No preference</option>
+              <option>A</option><option>B</option><option>C</option>
+            </select>
+          </div>
+        </div>
       </section>
 
+      <!-- RIGHT: Availability panel -->
       <section class="card">
         <h2>Availability</h2>
-        <div id="availability" class="summary-box muted">Pick your dates to see rooms. “Partial” means available for some nights in the range.</div>
+        <div id="availability" class="summary-box muted">Pick your dates to see rooms.</div>
         <div style="margin-top:10px">
           <button class="btn primary" id="btnAvailability">Check Availability</button>
         </div>
@@ -144,7 +184,7 @@
       <footer>Data is read from <code>/data/rooms.json</code>, <code>/data/calendar.json</code>, and <code>/data/members.csv</code>. No server required. &middot; <span id="year"></span></footer>
     </section>
 
-    <!-- Hidden legacy controls expected by existing app.js -->
+    <!-- Hidden legacy controls that app.js reads -->
     <div class="legacy">
       <input id="checkin" type="date" />
       <input id="checkout" type="date" />
@@ -152,63 +192,50 @@
     </div>
   </div>
 
-  <!-- Your app logic (existing file) -->
+  <!-- Existing app logic -->
   <script src="app.js"></script>
 
-  <!-- Calendar wiring: renders big grid + syncs to hidden inputs so app.js continues to work -->
+  <!-- Calendar + wiring -->
   <script>
     (function(){
-      const $ = sel => document.querySelector(sel);
-      const ciInput = $('#checkin');
-      const coInput = $('#checkout');
-      const calGrid = $('#calGrid');
-      const monthLbl = $('#monthLbl');
-      const ciChip = $('#ciChip');
-      const coChip = $('#coChip');
+      const $ = s => document.querySelector(s);
+      const ciInput = $('#checkin'), coInput = $('#checkout');
+      const calGrid = $('#calGrid'), monthLbl = $('#monthLbl');
+      const ciChip = $('#ciChip'), coChip = $('#coChip');
       const summary = $('#summary');
-      const availabilityBox = $('#availability');
+      const availability = $('#availability');
       const demoBanner = $('#demoBanner');
 
-      // show demo banner if app.js set demo (fallback)
-      try {
-        if (window.location.search.includes('demo') || localStorage.getItem('demo')==='1') {
-          demoBanner.style.display='block';
-        }
-      } catch {}
+      // simple demo toggle
+      $('#btnDemo').addEventListener('click',()=>{ localStorage.setItem('demo','1'); demoBanner.style.display='block'; });
+      if (localStorage.getItem('demo')==='1') demoBanner.style.display='block';
+      $('#year').textContent = new Date().getFullYear();
 
-      // state
-      let current = dayjs().startOf('month');     // month being shown
-      let selStart = null, selEnd = null;         // selected range
-      let clubCalendar = {};                      // from /data/calendar.json
+      let current = dayjs().startOf('month');
+      let selStart = null, selEnd = null;
+      let clubCalendar = {};
 
-      // helpers
-      const isoOffset = d => (d.day() + 6) % 7;   // Sunday(0) -> 6, Monday(1) -> 0
+      const isoOffset = d => (d.day()+6)%7;
       const ymd = d => d.format('YYYY-MM-DD');
       const dmy = d => d.format('DD/MM/YYYY');
 
-      function setHiddenInputs() {
-        ciInput.value = selStart ? selStart.format('YYYY-MM-DD') : '';
-        coInput.value = selEnd ? selEnd.format('YYYY-MM-DD') : '';
+      function setHidden(){
+        ciInput.value = selStart ? ymd(selStart) : '';
+        coInput.value = selEnd ? ymd(selEnd) : '';
         ciChip.textContent = selStart ? dmy(selStart) : '—';
         coChip.textContent = selEnd ? dmy(selEnd) : '—';
-        if (selStart && selEnd) {
+        if (selStart && selEnd){
           summary.classList.remove('muted');
           summary.textContent = `Stay: ${dmy(selStart)} → ${dmy(selEnd)}  (${selEnd.diff(selStart,'day')} nights)`;
-        } else {
-          summary.classList.add('muted');
-          summary.textContent = 'Select your dates from the calendar above.';
-        }
+        } else { summary.classList.add('muted'); summary.textContent = 'Select your dates from the calendar above.'; }
       }
 
       async function loadCalendar(){
         try{
           const res = await fetch('data/calendar.json');
           clubCalendar = await res.json();
-        }catch(e){
-          clubCalendar = {};
-        }
+        }catch{ clubCalendar = {}; }
       }
-
       function dayStatus(d){
         const rec = clubCalendar[ymd(d)];
         if (!rec) return 'open';
@@ -220,16 +247,13 @@
       function render(){
         monthLbl.textContent = current.format('MMMM YYYY');
         calGrid.innerHTML = '';
-        // first cell = Monday of the first calendar row
         const start = current.startOf('month');
         const gridStart = start.subtract(isoOffset(start),'day');
-
         for (let i=0;i<42;i++){
           const d = gridStart.add(i,'day');
           const div = document.createElement('div');
           div.className = 'cell';
-          if (d.month() !== current.month()) div.classList.add('other');
-
+          if (d.month()!==current.month()) div.classList.add('other');
           const st = dayStatus(d);
           if (st==='closed') div.classList.add('closed');
           else if (st==='partial') div.classList.add('partial');
@@ -237,49 +261,29 @@
           div.dataset.date = ymd(d);
           div.innerHTML = `<span class="num">${d.date()}</span>`;
 
-          // selection styles
-          if (selStart && selEnd && d.isAfter(selStart,'day') && d.isBefore(selEnd,'day')) {
-            div.classList.add('inrange');
-          }
+          if (selStart && selEnd && d.isAfter(selStart,'day') && d.isBefore(selEnd,'day')) div.classList.add('inrange');
           if (selStart && ymd(d)===ymd(selStart)) div.classList.add('selected');
           if (selEnd && ymd(d)===ymd(selEnd)) div.classList.add('selected');
 
           div.addEventListener('click',()=>{
-            if (!selStart || (selStart && selEnd)) {
-              selStart = d; selEnd = null;
-            } else {
-              if (d.isBefore(selStart,'day')) { selEnd = selStart; selStart = d; }
-              else selEnd = d;
-            }
-            setHiddenInputs();
-            render();
+            if (!selStart || selEnd){ selStart = d; selEnd=null; }
+            else { if (d.isBefore(selStart,'day')) { selEnd = selStart; selStart = d; } else selEnd = d; }
+            setHidden(); render();
           });
-
           calGrid.appendChild(div);
         }
       }
 
-      // nav
       $('#prev').addEventListener('click',()=>{ current = current.subtract(1,'month'); render(); });
       $('#next').addEventListener('click',()=>{ current = current.add(1,'month'); render(); });
 
-      // wire "Check Availability" to existing app.js button if present
-      $('#btnAvailability').addEventListener('click',()=>{
-        // app.js listens for this button by id; if it attached a handler, it will run.
-        availabilityBox.textContent = 'Checking…';
-        // nothing else needed here; app.js will read #checkin/#checkout and render.
-      });
+      // Button is what app.js listens to; we just provide a small UI cue
+      $('#btnAvailability').addEventListener('click',()=>{ availability.textContent='Checking…'; });
 
-      // footer year
-      document.getElementById('year').textContent = new Date().getFullYear();
-
-      // initial
       (async function(){
         await loadCalendar();
-        selStart = dayjs().add(1,'day');
-        selEnd   = selStart.add(2,'day');
-        setHiddenInputs();
-        render();
+        selStart = dayjs().add(1,'day'); selEnd = selStart.add(2,'day');
+        setHidden(); render();
       })();
     })();
   </script>
