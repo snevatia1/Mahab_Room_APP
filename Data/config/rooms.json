@@ -1,4 +1,4 @@
-{
+ {
 "block": "A",
 "room_no": "A-1",
 "floor": "1st",
@@ -426,4 +426,5 @@
 "wheel_chair_access": true,
 "pets_permitted": false,
 "group_booking_permitted": false
+
 }
