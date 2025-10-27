@@ -7,15 +7,17 @@
     <style>
         * { box-sizing: border-box; }
         body { margin: 0; font-family: Arial, sans-serif; background: #f0f0f0; }
-        .app { display: grid; grid-template-columns: 0.4fr 0.6fr; height: 100vh; } /* Left 40%, right 60% */
+        .app { display: grid; grid-template-columns: 0.4fr 0.6fr; height: 100vh; }
         .left-pane { overflow-y: auto; padding: 10px; background: #f9f9f9; }
         .right-pane { overflow-y: auto; padding: 10px; background: white; }
+        .logo { text-align: center; padding: 10px; background: white; margin-bottom: 10px; }
+        .logo img { max-width: 100%; height: auto; }
         .header { background: #cc3333; color: white; padding: 10px; position: sticky; top: 0; z-index: 1; text-align: center; }
         .month { margin-bottom: 15px; }
         .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #ddd; }
-        .date-cell { background: white; padding: 4px; text-align: center; cursor: pointer; height: 45px; border: 1px solid #ddd; position: relative; display: flex; flex-direction: column; justify-content: space-between; font-size: 14px; } /* Increased height */
-        .date-num { font-size: 18px; font-weight: bold; align-self: flex-start; } /* Larger date */
-        .room-qty { font-size: 16px; font-weight: bold; align-self: flex-end; } /* Larger qty */
+        .date-cell { background: white; padding: 4px; text-align: center; cursor: pointer; height: 45px; border: 1px solid #ddd; position: relative; display: flex; flex-direction: column; justify-content: space-between; font-size: 14px; }
+        .date-num { font-size: 18px; font-weight: bold; align-self: flex-start; }
+        .room-qty { font-size: 16px; font-weight: bold; align-self: flex-end; }
         .date-cell:hover { background: #e0e0e0; }
         .weekend { background: lightyellow !important; }
         .season { background: gold !important; }
@@ -38,12 +40,25 @@
         .rules-text { max-height: 150px; overflow: auto; border: 1px solid #ccc; padding: 10px; font-size: 12px; background: #f9f9f9; }
         label { display: flex; align-items: center; margin: 5px; flex-wrap: wrap; }
         @media (max-width: 768px) { 
-            .app { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; height: auto; min-height: 100vh; }
-            .left-pane, .right-pane { height: auto; padding: 5px; }
+            .app { 
+                display: flex; 
+                flex-direction: column; 
+                height: auto; 
+                min-height: 100vh; 
+            }
+            .left-pane, .right-pane { 
+                height: auto; 
+                padding: 5px; 
+                overflow-y: auto; 
+                flex: none; 
+            }
+            .left-pane { 
+                max-height: 50vh; 
+            }
             .party-row, .filter-row { flex-direction: column; align-items: stretch; }
-            select, input { width: 100%; max-width: 200px; margin: 2px 0; padding: 10px; font-size: 16px; } /* Touch-friendly */
+            select, input { width: 100%; max-width: 200px; margin: 2px 0; padding: 10px; font-size: 16px; }
             .block-btn { width: 100%; padding: 10px; margin: 5px 0; font-size: 16px; }
-            .date-cell { height: 50px; font-size: 16px; padding: 5px; min-width: 40px; } /* Larger touch targets */
+            .date-cell { height: 50px; font-size: 16px; padding: 5px; min-width: 40px; }
             .date-num { font-size: 20px; }
             .room-qty { font-size: 18px; }
             .grid { gap: 2px; }
@@ -64,6 +79,9 @@
 <body>
     <div class="app">
         <div class="left-pane">
+            <div class="logo">
+                <img src="logo.png" alt="Club Mahabaleshwar Logo">
+            </div>
             <div class="header" id="header">Loading...</div>
             <div id="calendar"></div>
         </div>
