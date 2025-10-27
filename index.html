@@ -36,7 +36,29 @@
         .sticky-summary { position: sticky; bottom: 0; background: white; border-top: 2px solid #cc3333; padding: 15px; }
         button { background: #cc3333; color: white; border: none; padding: 5px 10px; cursor: pointer; margin: 2px; }
         .rules-text { max-height: 150px; overflow: auto; border: 1px solid #ccc; padding: 10px; font-size: 12px; background: #f9f9f9; }
-        @media (max-width: 768px) { .app { grid-template-columns: 1fr; } .party-row, .filter-row { flex-direction: column; } }
+        label { display: flex; align-items: center; margin: 5px; flex-wrap: wrap; }
+        @media (max-width: 768px) { 
+            .app { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; height: auto; min-height: 100vh; }
+            .left-pane, .right-pane { height: auto; padding: 5px; }
+            .party-row, .filter-row { flex-direction: column; align-items: stretch; }
+            select, input { width: 100%; max-width: 200px; margin: 2px 0; padding: 10px; font-size: 16px; } /* Touch-friendly */
+            .block-btn { width: 100%; padding: 10px; margin: 5px 0; font-size: 16px; }
+            .date-cell { height: 50px; font-size: 16px; padding: 5px; min-width: 40px; } /* Larger touch targets */
+            .date-num { font-size: 20px; }
+            .room-qty { font-size: 18px; }
+            .grid { gap: 2px; }
+            button { padding: 12px 20px; font-size: 16px; width: 100%; margin: 5px 0; }
+            .room-item { display: block; width: 100%; min-width: auto; margin: 5px 0; }
+            .month h3 { font-size: 18px; }
+            .section { padding: 15px; margin-bottom: 20px; }
+            .sticky-summary { position: relative; }
+            label { flex-direction: column; align-items: flex-start; }
+        }
+        @media (max-width: 480px) {
+            .date-cell { min-width: 35px; }
+            .date-num { font-size: 18px; }
+            .room-qty { font-size: 14px; }
+        }
     </style>
 </head>
 <body>
