@@ -69,7 +69,7 @@
                         <label>Temp Kids 5-10: <input type="number" id="tempK" min="0" value="0" onchange="updateParty()"></label>
                     </div>
                     <div class="party-row">
-                        <label>Group: <input type="number" id="group" min="10" max="19" value="0" onchange="updateParty()"></label>
+                        <label>Group Rooms: <input type="number" id="group" min="10" max="19" value="0" onchange="updateParty()"></label>
                     </div>
                     <p>Member children (10–21) and Parents are billed as Temporary Members.</p>
                 </div>
@@ -168,6 +168,7 @@
         let state = { checkIn: null, checkOut: null, party: {members:0,seniors:0,parents:0,mChildren1021:0,kidsU10:0,tempA:0,tempK:0,group:0}, filters: {wheel:0,pet:0,ac:0,single:0,quad:0,groupR:0}, verified: true, veg:0, nonveg:0, accept: false, selected: [], selectedRooms: 0 };
         const currentDate = new Date('2025-10-27');
         const blocks = ['A', 'B', 'Old C', 'New C', 'D', 'Old E', 'New E'];
+        const groupBlocks = ['A', 'Old C', 'New C'];
         // Mock availability for demo: room -> date -> available (for partial)
         const mockAvailability = {}; // e.g., { 'A-1': { '2025-10-28': true, '2025-10-29': false } }
         data.rooms.forEach(r => mockAvailability[r.room_no] = {});
@@ -252,7 +253,7 @@
             const outStr = state.checkOut ? state.checkOut.toLocaleDateString() : '?';
             document.getElementById('datesDisplay').innerText = `Check-in: ${inStr} | Check-out: ${outStr}`;
         }
-        function isWeekend(d) { return d.getDay() === 0 || d.getDay() === 6; }
+        function isWeekend(d) { return d.getDay() === 5 || d.getDay() === 6; } // Fri=5, Sat=6
         function getSeasonTag(d) {
             const s = data.seasons.find(se => d >= new Date(se.from) && d <= new Date(se.to));
             return s ? s.tag : null;
@@ -275,7 +276,7 @@
             document.getElementById('tempK').value = Math.min(+document.getElementById('tempK').value, 6);
             document.getElementById('group').value = Math.max(0, Math.min(+document.getElementById('group').value, 19));
             if (state.party.group > 0 && state.party.group < 10) {
-                alert('Group min 10');
+                alert('Group min 10 rooms');
                 document.getElementById('group').value = 0;
             }
             state.party.members = +document.getElementById('members').value;
@@ -296,33 +297,44 @@
                 else if (hasTemp) maxDays = 90;
                 if (daysAhead > maxDays) alert(data.policy.messages.window_exceeded_temp.replace('$1', maxDays.toString()));
             }
-            const totalP = Object.values(state.party).reduce((a,b)=>a+b,0) - state.party.group; // Group separate
+            const totalP = Object.values(state.party).reduce((a,b)=>a+b,0) - state.party.group * 4; // Assume quad for group rooms
             const isWknd = state.checkIn && isWeekend(state.checkIn);
-            const estRooms = Math.ceil(totalP / 2) + state.party.group;
-            const maxRooms = isWknd ? 3 : 6;
-            if (estRooms > maxRooms) alert(`Cap exceeded: ${isWknd ? 'Weekend max 3' : 'Weekday max 6'} (est. ${estRooms}).`);
+            let estRooms = Math.ceil(totalP / 2) + state.party.group;
+            let maxRooms = isWknd ? 3 : 6;
+            const hasSingles = totalP % 2 === 1 || state.filters.single > 0;
+            if (hasSingles) maxRooms = Math.max(maxRooms, 10);
+            if (state.party.group > 0) maxRooms = 19; // Special for groups
+            if (estRooms > maxRooms) alert(`Cap exceeded: ${isWknd ? 'Weekend max 3' : 'Weekday max 6'} (est. ${estRooms}). For groups up to 19.`);
             updateSummary(); updateMeals();
         }
         function updateFilters() {
-            state.filters.wheel = +document.getElementById('wheel').value;
-            state.filters.pet = +document.getElementById('pet').value;
-            state.filters.ac = +document.getElementById('ac').value;
-            state.filters.single = +document.getElementById('single').value;
-            state.filters.quad = +document.getElementById('quad').value;
-            state.filters.groupR = +document.getElementById('groupR').value;
+            const currentValues = {
+                wheel: +document.getElementById('wheel').value,
+                pet: +document.getElementById('pet').value,
+                ac: +document.getElementById('ac').value,
+                single: +document.getElementById('single').value,
+                quad: +document.getElementById('quad').value,
+                groupR: +document.getElementById('groupR').value
+            };
+            state.filters.wheel = currentValues.wheel;
+            state.filters.pet = currentValues.pet;
+            state.filters.ac = currentValues.ac;
+            state.filters.single = currentValues.single;
+            state.filters.quad = currentValues.quad;
+            state.filters.groupR = currentValues.groupR;
             // Dynamic max based on room attributes, enforce max during selection
             const wheelCount = data.rooms.filter(r => r.wheelchair).length;
             const petCount = data.rooms.filter(r => r.pet).length;
             const acCount = data.rooms.filter(r => r.ac).length;
             const singleCount = data.rooms.filter(r => r.type === 'single').length;
             const quadCount = data.rooms.filter(r => r.type === 'quad').length;
-            const groupCount = data.rooms.filter(r => r.group).length;
+            let groupCount = data.rooms.filter(r => r.group && groupBlocks.includes(r.block)).length;
             const selectedWheel = state.selected.filter(s => data.rooms.find(r=>r.room_no===s.room_no)?.wheelchair || false).length;
             const selectedPet = state.selected.filter(s => data.rooms.find(r=>r.room_no===s.room_no)?.pet || false).length;
             const selectedAc = state.selected.filter(s => data.rooms.find(r=>r.room_no===s.room_no)?.ac || false).length;
             const selectedSingle = state.selected.filter(s => data.rooms.find(r=>r.room_no===s.room_no)?.type === 'single').length;
             const selectedQuad = state.selected.filter(s => data.rooms.find(r=>r.room_no===s.room_no)?.type === 'quad').length;
-            const selectedGroupR = state.selected.filter(s => data.rooms.find(r=>r.room_no===s.room_no)?.group || false).length;
+            const selectedGroupR = state.selected.filter(s => data.rooms.find(r=>r.room_no===s.room_no)?.group && groupBlocks.includes(data.rooms.find(r=>r.room_no===s.room_no)?.block) || false).length;
             ['wheel','pet','ac','single','quad'].forEach(f => {
                 const sel = document.getElementById(f);
                 sel.innerHTML = '<option value="0">0</option>';
@@ -333,25 +345,30 @@
                 else if (f === 'single') maxF = Math.max(0, singleCount - selectedSingle);
                 else maxF = Math.max(0, quadCount - selectedQuad);
                 for (let i = 1; i <= maxF; i++) sel.innerHTML += `<option value="${i}">${i}</option>`;
-                const val = +sel.value;
-                if (val > maxF) sel.value = maxF.toString();
+                const val = currentValues[f];
+                sel.value = Math.min(val, maxF).toString();
             });
-            document.getElementById('groupR').innerHTML = '<option value="0">0</option>';
+            const groupSel = document.getElementById('groupR');
+            groupSel.innerHTML = '<option value="0">0</option>';
             const maxGroup = Math.min(19, groupCount - selectedGroupR);
-            for (let i = 1; i <= maxGroup; i++) document.getElementById('groupR').innerHTML += `<option value="${i}">${i}</option>`;
-            const valG = +document.getElementById('groupR').value;
-            if (valG > maxGroup) document.getElementById('groupR').value = maxGroup.toString();
+            for (let i = 1; i <= maxGroup; i++) groupSel.innerHTML += `<option value="${i}">${i}</option>`;
+            const valG = currentValues.groupR;
+            groupSel.value = Math.min(valG, maxGroup).toString();
             const matching = getFilteredRooms().length;
             document.getElementById('filterCounts').innerText = `Matching: ${matching} rooms`;
             updateBlockChips();
             updateSummary();
         }
         function getFilteredRooms() {
-            return data.rooms.filter(r =>
+            let filtered = data.rooms.filter(r =>
                 (state.filters.wheel === 0 || r.wheelchair) && (state.filters.pet === 0 || r.pet) &&
                 (state.filters.ac === 0 || r.ac) && (state.filters.single === 0 || r.type === 'single') &&
-                (state.filters.quad === 0 || r.type === 'quad') && (state.filters.groupR === 0 || r.group)
-            ).filter(r => !state.selected.some(s => s.room_no === r.room_no));
+                (state.filters.quad === 0 || r.type === 'quad')
+            );
+            if (state.filters.groupR > 0) {
+                filtered = filtered.filter(r => r.group && groupBlocks.includes(r.block));
+            }
+            return filtered.filter(r => !state.selected.some(s => s.room_no === r.room_no));
         }
         function updateBlockChips() {
             const chips = document.getElementById('blockChips');
@@ -366,7 +383,11 @@
         }
         function showRooms(block) {
             const list = document.getElementById('roomList');
-            const avail = getFilteredRooms().filter(r => r.block === block);
+            let avail = getFilteredRooms().filter(r => r.block === block);
+            if (state.filters.groupR > 0 && !groupBlocks.includes(block)) {
+                list.innerHTML = `<h4>Group rooms only available in A, Old C, New C.</h4>`;
+                return;
+            }
             list.innerHTML = `<h4>Rooms in ${block}:</h4>`;
             const isMultiNight = state.checkOut && (state.checkOut - state.checkIn) / (1000*60*60*24) > 1;
             avail.forEach(r => {
@@ -387,6 +408,10 @@
             if (avail.length === 0) list.innerHTML += '<p>No rooms available.</p>';
         }
         function selectRoom(roomNo, block) {
+            if (state.filters.groupR > 0 && !groupBlocks.includes(block)) {
+                alert('Group rooms only in A, Old C, New C.');
+                return;
+            }
             if (!state.selected.some(s => s.room_no === roomNo)) {
                 const room = data.rooms.find(r => r.room_no === roomNo);
                 state.selected.push({room_no: roomNo, block});
@@ -435,7 +460,7 @@
             const membersTotal = state.party.members + state.party.seniors;
             const dependants = state.party.parents + state.party.mChildren1021 + state.party.kidsU10;
             const temps = state.party.tempA + state.party.tempK;
-            document.getElementById('summaryParty').innerText = `Members: ${membersTotal} (21-64: ${state.party.members}, 65+: ${state.party.seniors}), Dependants: ${dependants} (Parents: ${state.party.parents}, M Ch 10-21: ${state.party.mChildren1021}, Ch <10: ${state.party.kidsU10}), Temp Members: ${temps}, Group: ${state.party.group} | Total: ${totalP}`;
+            document.getElementById('summaryParty').innerText = `Members: ${membersTotal} (21-64: ${state.party.members}, 65+: ${state.party.seniors}), Dependants: ${dependants} (Parents: ${state.party.parents}, M Ch 10-21: ${state.party.mChildren1021}, Ch <10: ${state.party.kidsU10}), Temp Members: ${temps}, Group Rooms: ${state.party.group} | Total: ${totalP}`;
             document.getElementById('summaryRooms').innerText = `Rooms: ${state.selectedRooms} selected`;
             document.getElementById('summaryFilters').innerText = `Filters: Wheelchair${state.filters.wheel} Pets${state.filters.pet} AC${state.filters.ac} Single${state.filters.single} 4Beds${state.filters.quad} GroupR${state.filters.groupR}`;
             // Stub tariff: ₹5250 per person per night, enhance later
