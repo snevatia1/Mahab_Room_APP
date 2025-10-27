@@ -1,0 +1,59 @@
+{
+  "policy": {
+    "messages": {
+      "header": "Booking days for Member & Groups 180, Member + Temp M 90, Only Temp M 60. Choose in & out dates below.",
+      "disclaimer": "The Club will try to give the rooms and types you selected but may change the same as per availability at the time of booking.",
+      "dues_pending": "We couldn’t send the OTP because your account shows outstanding dues. Please contact the office.",
+      "meals_mismatch": "Veg + Non-Veg must equal the total number of occupants.",
+      "partial_room": "Partial availability: Auto-chain suggested."
+    }
+  },
+  "seasons": [
+    {"label": "Diwali", "from": "2025-10-17", "to": "2025-11-02", "tag": "season"},
+    {"label": "Christmas", "from": "2025-12-19", "to": "2026-01-04", "tag": "season"},
+    {"label": "Republic Day LW", "from": "2026-01-23", "to": "2026-01-26", "tag": "special"}
+  ],
+  "rooms": [
+    {"block": "A", "room_no": "A-1", "type": "double", "wheelchair": true, "pet": false, "ac": false, "group": true},
+    {"block": "A", "room_no": "A-2", "type": "quad", "wheelchair": true, "pet": false, "ac": false, "group": true},
+    {"block": "A", "room_no": "A-3", "type": "double", "wheelchair": true, "pet": false, "ac": false, "group": true},
+    {"block": "A", "room_no": "A-4", "type": "quad", "wheelchair": true, "pet": false, "ac": false, "group": true},
+    {"block": "A", "room_no": "A-5", "type": "double", "wheelchair": true, "pet": false, "ac": false, "group": true},
+    {"block": "A", "room_no": "A-6", "type": "double", "wheelchair": true, "pet": false, "ac": false, "group": true},
+    {"block": "A", "room_no": "A-7", "type": "double", "wheelchair": true, "pet": false, "ac": false, "group": true},
+    {"block": "A", "room_no": "A-8", "type": "double", "wheelchair": true, "pet": false, "ac": false, "group": true},
+    {"block": "A", "room_no": "A-9", "type": "double", "wheelchair": true, "pet": false, "ac": false, "group": true},
+    {"block": "B", "room_no": "B-1", "type": "quad", "wheelchair": true, "pet": false, "ac": false, "group": false},
+    {"block": "B", "room_no": "B-2", "type": "quad", "wheelchair": false, "pet": false, "ac": false, "group": false},
+    {"block": "B", "room_no": "B-3", "type": "quad", "wheelchair": false, "pet": false, "ac": false, "group": false},
+    {"block": "B", "room_no": "B-4", "type": "quad", "wheelchair": false, "pet": false, "ac": false, "group": false},
+    {"block": "B", "room_no": "B-5", "type": "quad", "wheelchair": false, "pet": false, "ac": false, "group": false},
+    {"block": "B", "room_no": "B-6", "type": "quad", "wheelchair": false, "pet": false, "ac": false, "group": false},
+    {"block": "B", "room_no": "B-7", "type": "quad", "wheelchair": false, "pet": false, "ac": false, "group": false},
+    {"block": "B", "room_no": "B-8", "type": "quad", "wheelchair": false, "pet": false, "ac": false, "group": false},
+    {"block": "B", "room_no": "B-9", "type": "double", "wheelchair": false, "pet": false, "ac": false, "group": false},
+    {"block": "Old C", "room_no": "C-1", "type": "double", "wheelchair": false, "pet": false, "ac": true, "group": true},
+    {"block": "Old C", "room_no": "C-2", "type": "double", "wheelchair": false, "pet": false, "ac": true, "group": true},
+    {"block": "Old C", "room_no": "C-3", "type": "double", "wheelchair": false, "pet": false, "ac": true, "group": true},
+    {"block": "Old C", "room_no": "C-4", "type": "double", "wheelchair": false, "pet": false, "ac": true, "group": true},
+    {"block": "Old C", "room_no": "C-5", "type": "double", "wheelchair": false, "pet": false, "ac": true, "group": true},
+    {"block": "Old C", "room_no": "C-6", "type": "double", "wheelchair": false, "pet": false, "ac": true, "group": true},
+    {"block": "New C", "room_no": "C-7", "type": "double", "wheelchair": false, "pet": true, "ac": true, "group": true},
+    {"block": "New C", "room_no": "C-8", "type": "double", "wheelchair": false, "pet": true, "ac": true, "group": true},
+    {"block": "New C", "room_no": "C-9", "type": "double", "wheelchair": false, "pet": true, "ac": true, "group": true},
+    {"block": "New C", "room_no": "C-10", "type": "double", "wheelchair": false, "pet": true, "ac": true, "group": true},
+    {"block": "D", "room_no": "D-1", "type": "double", "wheelchair": true, "pet": true, "ac": true, "group": false},
+    {"block": "D", "room_no": "D-2", "type": "double", "wheelchair": true, "pet": true, "ac": true, "group": false},
+    {"block": "D", "room_no": "D-3", "type": "double", "wheelchair": true, "pet": true, "ac": true, "group": false},
+    {"block": "D", "room_no": "D-4", "type": "double", "wheelchair": true, "pet": true, "ac": true, "group": false},
+    {"block": "Old E", "room_no": "E-1", "type": "double", "wheelchair": false, "pet": true, "ac": true, "group": false},
+    {"block": "Old E", "room_no": "E-2", "type": "double", "wheelchair": false, "pet": true, "ac": true, "group": false},
+    {"block": "Old E", "room_no": "E-3", "type": "double", "wheelchair": false, "pet": false, "ac": true, "group": false},
+    {"block": "New E", "room_no": "E-4", "type": "double", "wheelchair": true, "pet": false, "ac": true, "group": false},
+    {"block": "New E", "room_no": "E-5", "type": "double", "wheelchair": true, "pet": false, "ac": true, "group": false},
+    {"block": "New E", "room_no": "E-6", "type": "double", "wheelchair": true, "pet": false, "ac": true, "group": false},
+    {"block": "New E", "room_no": "E-7", "type": "double", "wheelchair": true, "pet": false, "ac": true, "group": false}
+  ],
+  "dues": {"123": 0, "234": 20},
+  "rules": "The Club Mahabaleshwar – Room Booking Rules & Policies (Effective October 2025) 1. Advance Booking Windows • Members, Dependents, and Parents may book up to 180 days in advance. Groups 10-19 rooms only on weekdays in A/C blocks. • Member + Guests: 90 days. • Temp only: 60 days. 2. Procedure: Calendar > Phone > Form + email to bookings@clubmahabaleshwar.net. 3. Caps: Weekdays 6 rooms; Weekends max 3 (1 self +2 temp). No temp on Diwali/Christmas. Children <10 no room. 4. Features: Pet/Wheelchair/Single/4-bed/AC (+₹1000). 5. Seniors: 10% off. 6. Groups: 10-19 rooms, no special days, ₹20k deposit, list 15 days ahead, caps A=9 C=10. 7. Cancellations: See policy table (e.g., >7 days 10%). 8. Seasons: Diwali 17Oct-2Nov, Christmas 19Dec-4Jan. 9. Tariffs: MEMBER Double ₹5250 reg/₹6300 special; Temp Double ₹9580/₹11449 (full list in code). 10. Contact: bookings@clubmahabaleshwar.net, +91 2168 260221."
+}
