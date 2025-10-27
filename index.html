@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Club Mahabaleshwar Demo Booking</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: Arial, sans-serif; background: #f0f0f0; }
+        .app { display: grid; grid-template-columns: 0.4fr 0.6fr; height: 100vh; } /* Left 40%, right 60% */
+        .left-pane { overflow-y: auto; padding: 10px; background: #f9f9f9; }
+        .right-pane { overflow-y: auto; padding: 10px; background: white; }
+        .header { background: #cc3333; color: white; padding: 10px; position: sticky; top: 0; z-index: 1; text-align: center; }
+        .month { margin-bottom: 15px; }
+        .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #ddd; }
+        .date-cell { background: white; padding: 4px; text-align: center; cursor: pointer; height: 45px; border: 1px solid #ddd; position: relative; display: flex; flex-direction: column; justify-content: space-between; font-size: 14px; } /* Increased height */
+        .date-num { font-size: 18px; font-weight: bold; align-self: flex-start; } /* Larger date */
+        .room-qty { font-size: 16px; font-weight: bold; align-self: flex-end; } /* Larger qty */
+        .date-cell:hover { background: #e0e0e0; }
+        .weekend { background: lightyellow !important; }
+        .season { background: gold !important; }
+        .special { background: red !important; color: white !important; }
+        .selected { background: lightblue !important; }
+        .past { background: #f0f0f0 !important; color: #999; cursor: not-allowed; opacity: 0.7; }
+        .error { color: red; }
+        .section { margin-bottom: 15px; padding: 10px; border: 1px solid #ddd; }
+        .party-row { display: flex; justify-content: space-around; margin: 5px 0; flex-wrap: wrap; }
+        .filter-row { display: flex; justify-content: space-around; margin: 5px 0; flex-wrap: wrap; }
+        select, input { margin: 5px; padding: 5px; width: 60px; }
+        .block-btn { background: #ccc; margin: 2px; padding: 5px; cursor: pointer; }
+        #roomList { max-height: 200px; overflow: auto; }
+        .room-item { border: 1px solid #ddd; padding: 5px; margin: 2px; background: #f9f9f9; display: inline-block; min-width: 80px; }
+        .selected-room { background: lightgreen; }
+        #selectedRoomsList { max-height: 150px; overflow: auto; border: 1px solid #ddd; padding: 5px; background: #f9f9f9; }
+        .sticky-summary { position: sticky; bottom: 0; background: white; border-top: 2px solid #cc3333; padding: 15px; }
+        button { background: #cc3333; color: white; border: none; padding: 5px 10px; cursor: pointer; margin: 2px; }
+        .rules-text { max-height: 150px; overflow: auto; border: 1px solid #ccc; padding: 10px; font-size: 12px; background: #f9f9f9; }
+        @media (max-width: 768px) { .app { grid-template-columns: 1fr; } .party-row, .filter-row { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="left-pane">
+            <div class="header" id="header">Loading...</div>
+            <div id="calendar"></div>
+        </div>
+        <div class="right-pane" id="rightPane">
+            <div id="otpGate" class="section" style="display:none;"></div>
+            <div id="mainContent" style="display:block;">
+                <p style="background:#e0f7e0; padding:5px;">Demo: Logged in as ABC (Mem#123) – OTP assumed received.</p>
+                <div class="section">
+                    <h3>Dates</h3>
+                    <p id="datesDisplay">Check-in: ? | Check-out: ?</p>
+                </div>
+                <div class="section">
+                    <h3>Party Size</h3>
+                    <div class="party-row">
+                        <label>Member 21-64: <input type="number" id="members" min="0" value="0" onchange="updateParty()"></label>
+                        <label>Member 65+: <input type="number" id="seniors" min="0" value="0" onchange="updateParty()"></label>
+                        <label>Children <10: <input type="number" id="kidsU10" min="0" value="0" onchange="updateParty()"></label>
+                    </div>
+                    <div class="party-row">
+                        <label>Parents: <input type="number" id="parents" min="0" value="0" onchange="updateParty()"></label>
+                        <label>Temp Adults: <input type="number" id="tempA" min="0" value="0" onchange="updateParty()"></label>
+                        <label>Temp Kids 5-10: <input type="number" id="tempK" min="0" value="0" onchange="updateParty()"></label>
+                    </div>
+                    <div class="party-row">
+                        <label>Group: <input type="number" id="group" min="10" max="19" value="0" onchange="updateParty()"></label>
+                    </div>
+                    <p>Children (11–21) and Parents are billed as Temporary Members.</p>
+                </div>
+                <div class="section">
+                    <h3>Filters (# Rooms)</h3>
+                    <div class="filter-row">
+                        <label>Wheelchair: <select id="wheel" onchange="updateFilters()"><option value="0">0</option></select></label>
+                        <label>Pets: <select id="pet" onchange="updateFilters()"><option value="0">0</option></select></label>
+                        <label>AC: <select id="ac" onchange="updateFilters()"><option value="0">0</option></select></label>
+                    </div>
+                    <div class="filter-row">
+                        <label>Single: <select id="single" onchange="updateFilters()"><option value="0">0</option></select></label>
+                        <label>4 Beds: <select id="quad" onchange="updateFilters()"><option value="0">0</option></select></label>
+                        <label>Group Rooms: <select id="groupR" onchange="updateFilters()"><option value="0">0</option></select></label>
+                    </div>
+                    <p id="filterCounts">Matching: 39 rooms</p>
+                </div>
+                <div class="section">
+                    <h3>Availability (After Filters & Selected)</h3>
+                    <div id="blockChips"></div>
+                    <p>Click block for rooms. Partial: Auto-chain for spans.</p>
+                    <div id="roomList"></div>
+                    <div id="selectedRoomsList"></div>
+                </div>
+                <div class="section">
+                    <h3>Occupancy</h3>
+                    <p>Rooms selected: <span id="roomsSelectedCount">0</span></p>
+                    <p>Total capacity: <span id="maxOccupancy">0</span></p>
+                    <p>Total occupants: <span id="totalParty">0</span></p>
+                    <p id="occupancyMsg"></p>
+                </div>
+                <div class="section">
+                    <h3>Meals</h3>
+                    <label>Veg: <input type="number" id="veg" min="0" value="0" onchange="updateMeals()"></label>
+                    <label>Non-Veg: <input type="number" id="nonveg" min="0" value="0" onchange="updateMeals()"></label>
+                    <p id="mealsError" class="error"></p>
+                </div>
+                <div class="sticky-summary section">
+                    <h3>Summary</h3>
+                    <p id="summaryDates"></p>
+                    <p id="summaryParty"></p>
+                    <p id="summaryRooms">Rooms: 0 selected</p>
+                    <p id="summaryFilters">Filters: None</p>
+                    <p id="summaryTotal">Est. Total: ₹0</p>
+                    <p id="disclaimer"></p>
+                    <a href="#" onclick="toggleRules();return false;">Rules (incl. Cancellation & Dress Code)</a>
+                    <div id="rulesPanel" class="rules-text" style="display:none;"></div>
+                    <label><input type="checkbox" id="accept" onchange="updateSummary()"> Confirm that you will abide by the rules including cancellation and dress code.</label>
+                    <button onclick="confirmBooking()" id="confirmBtn" disabled>Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        let data = { policy: { messages: { header: 'Booking days for Member & Groups 180, Member + Temp M 90, Only Temp M 60. Choose in & out dates below.', disclaimer: 'The Club will try to give the rooms and types you selected but may change the same as per availability at the time of booking.', dues_pending: 'Dues pending. Contact office.', meals_mismatch: 'Veg + Non-Veg must equal the total number of occupants.', window_exceeded_temp: 'Temp-only bookings can be made up to $1 days in advance for these dates.' } }, seasons: [{from:'2025-10-17',to:'2025-11-02',tag:'season'}, {from:'2025-12-19',to:'2026-01-04',tag:'season'}, {from:'2026-01-23',to:'2026-01-26',tag:'special'}], rooms: [
+            {block:'A',room_no:'A-1',type:'double',wheelchair:true,pet:false,ac:false,group:true},
+            {block:'A',room_no:'A-2',type:'quad',wheelchair:true,pet:false,ac:false,group:true},
+            {block:'A',room_no:'A-3',type:'double',wheelchair:true,pet:false,ac:false,group:true},
+            {block:'A',room_no:'A-4',type:'quad',wheelchair:true,pet:false,ac:false,group:true},
+            {block:'A',room_no:'A-5',type:'double',wheelchair:true,pet:false,ac:false,group:true},
+            {block:'A',room_no:'A-6',type:'double',wheelchair:true,pet:false,ac:false,group:true},
+            {block:'A',room_no:'A-7',type:'double',wheelchair:true,pet:false,ac:false,group:true},
+            {block:'A',room_no:'A-8',type:'double',wheelchair:true,pet:false,ac:false,group:true},
+            {block:'A',room_no:'A-9',type:'double',wheelchair:true,pet:false,ac:false,group:true},
+            {block:'B',room_no:'B-1',type:'quad',wheelchair:true,pet:false,ac:false,group:false},
+            {block:'B',room_no:'B-2',type:'quad',wheelchair:false,pet:false,ac:false,group:false},
+            {block:'B',room_no:'B-3',type:'quad',wheelchair:false,pet:false,ac:false,group:false},
+            {block:'B',room_no:'B-4',type:'quad',wheelchair:false,pet:false,ac:false,group:false},
+            {block:'B',room_no:'B-5',type:'quad',wheelchair:false,pet:false,ac:false,group:false},
+            {block:'B',room_no:'B-6',type:'quad',wheelchair:false,pet:false,ac:false,group:false},
+            {block:'B',room_no:'B-7',type:'quad',wheelchair:false,pet:false,ac:false,group:false},
+            {block:'B',room_no:'B-8',type:'quad',wheelchair:false,pet:false,ac:false,group:false},
+            {block:'B',room_no:'B-9',type:'double',wheelchair:false,pet:false,ac:false,group:false},
+            {block:'Old C',room_no:'C-1',type:'double',wheelchair:false,pet:false,ac:true,group:true},
+            {block:'Old C',room_no:'C-2',type:'double',wheelchair:false,pet:false,ac:true,group:true},
+            {block:'Old C',room_no:'C-3',type:'double',wheelchair:false,pet:false,ac:true,group:true},
+            {block:'Old C',room_no:'C-4',type:'double',wheelchair:false,pet:false,ac:true,group:true},
+            {block:'Old C',room_no:'C-5',type:'double',wheelchair:false,pet:false,ac:true,group:true},
+            {block:'Old C',room_no:'C-6',type:'double',wheelchair:false,pet:false,ac:true,group:true},
+            {block:'New C',room_no:'C-7',type:'double',wheelchair:false,pet:true,ac:true,group:true},
+            {block:'New C',room_no:'C-8',type:'double',wheelchair:false,pet:true,ac:true,group:true},
+            {block:'New C',room_no:'C-9',type:'double',wheelchair:false,pet:true,ac:true,group:true},
+            {block:'New C',room_no:'C-10',type:'double',wheelchair:false,pet:true,ac:true,group:true},
+            {block:'D',room_no:'D-1',type:'double',wheelchair:true,pet:true,ac:true,group:false},
+            {block:'D',room_no:'D-2',type:'double',wheelchair:true,pet:true,ac:true,group:false},
+            {block:'D',room_no:'D-3',type:'double',wheelchair:true,pet:true,ac:true,group:false},
+            {block:'D',room_no:'D-4',type:'double',wheelchair:true,pet:true,ac:true,group:false},
+            {block:'Old E',room_no:'E-1',type:'double',wheelchair:false,pet:true,ac:true,group:false},
+            {block:'Old E',room_no:'E-2',type:'double',wheelchair:false,pet:true,ac:true,group:false},
+            {block:'Old E',room_no:'E-3',type:'double',wheelchair:false,pet:false,ac:true,group:false},
+            {block:'New E',room_no:'E-4',type:'double',wheelchair:true,pet:false,ac:true,group:false},
+            {block:'New E',room_no:'E-5',type:'double',wheelchair:true,pet:false,ac:true,group:false},
+            {block:'New E',room_no:'E-6',type:'double',wheelchair:true,pet:false,ac:true,group:false},
+            {block:'New E',room_no:'E-7',type:'double',wheelchair:true,pet:false,ac:true,group:false}
+        ], dues: {123:0,234:20}, rules: 'The Club Mahabaleshwar – Room Booking Rules & Policies (Effective October 2025)... (full text from DOCX). Cancellation: Cancellations must be made 30 days in advance for full refund. Dress Code: Smart casual in common areas.' };
+        let state = { checkIn: null, checkOut: null, party: {members:0,seniors:0,kidsU10:0,parents:0,tempA:0,tempK:0,group:0}, filters: {wheel:0,pet:0,ac:0,single:0,quad:0,groupR:0}, verified: true, veg:0, nonveg:0, accept: false, selected: [], selectedRooms: 0 };
+        const currentDate = new Date('2025-10-27');
+        const blocks = ['A', 'B', 'Old C', 'New C', 'D', 'Old E', 'New E'];
+        fetch('data.json').then(r=>r.json()).then(d=>{data=d;init();}).catch(()=>{init();});
+        function init() {
+            document.getElementById('header').innerText = data.policy.messages.header;
+            document.getElementById('disclaimer').innerText = data.policy.messages.disclaimer;
+            document.getElementById('rulesPanel').innerText = data.rules;
+            generateCalendar();
+            updateFilters();
+            updateParty();
+            updateMeals();
+            updateSummary();
+            updateDatesDisplay();
+            updateSelectedList();
+            document.getElementById('mainContent').style.display = 'block';
+            document.getElementById('otpGate').style.display = 'none';
+            document.getElementById('rightPane').classList.remove('locked');
+        }
+        function generateCalendar() {
+            const cal = document.getElementById('calendar'); cal.innerHTML = '';
+            for (let m = 0; m < 6; m++) {
+                const monthDate = new Date(2025, 9 + m, 1); // Oct = 9
+                const div = document.createElement('div'); div.className = 'month';
+                div.innerHTML = `<h3>${monthDate.toLocaleDateString('en-US',{month:'long',year:'numeric'})}</h3><div class="grid">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`<div>${d}</div>`).join('')}</div>`;
+                const grid = div.querySelector('.grid');
+                const firstDay = monthDate.getDay();
+                const daysInMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0).getDate();
+                // Empty cells before first day
+                for (let e = 0; e < firstDay; e++) {
+                    grid.innerHTML += '<div></div>';
+                }
+                // Days of month
+                for (let d = 1; d <= daysInMonth; d++) {
+                    const date = new Date(monthDate.getFullYear(), monthDate.getMonth(), d);
+                    const cell = document.createElement('div'); cell.className = 'date-cell';
+                    cell.innerHTML = `<div class="date-num">${d}</div><div class="room-qty">39</div>`;
+                    if (date < currentDate) cell.classList.add('past');
+                    else if (isWeekend(date)) cell.classList.add('weekend');
+                    const seasonTag = getSeasonTag(date);
+                    if (seasonTag) cell.classList.add(seasonTag);
+                    if (state.checkIn && state.checkOut && date >= state.checkIn && date <= state.checkOut) cell.classList.add('selected');
+                    cell.onclick = () => selectDate(new Date(date));
+                    grid.appendChild(cell);
+                }
+                // Empty cells after
+                const totalCells = 42 - firstDay - daysInMonth;
+                for (let e = 0; e < totalCells; e++) {
+                    grid.appendChild(document.createElement('div'));
+                }
+                cal.appendChild(div);
+            }
+        }
+        function selectDate(date) {
+            if (date < currentDate) {
+                alert('Selection only from today onwards.');
+                return;
+            }
+            if (!state.checkIn) {
+                state.checkIn = new Date(date);
+            } else if (!state.checkOut) {
+                if (date > state.checkIn) {
+                    state.checkOut = new Date(date);
+                } else {
+                    state.checkIn = new Date(date);
+                }
+            } else if (date < state.checkIn) {
+                state.checkIn = new Date(date);
+                state.checkOut = null;
+            } else if (date > state.checkOut) {
+                state.checkOut = new Date(date);
+            } else {
+                state.checkIn = new Date(date);
+                state.checkOut = null;
+            }
+            generateCalendar();
+            updateSummary();
+            updateDatesDisplay();
+        }
+        function updateDatesDisplay() {
+            const inStr = state.checkIn ? state.checkIn.toLocaleDateString() : '?';
+            const outStr = state.checkOut ? state.checkOut.toLocaleDateString() : '?';
+            document.getElementById('datesDisplay').innerText = `Check-in: ${inStr} | Check-out: ${outStr}`;
+        }
+        function isWeekend(d) { return d.getDay() === 0 || d.getDay() === 6; }
+        function getSeasonTag(d) {
+            const s = data.seasons.find(se => d >= new Date(se.from) && d <= new Date(se.to));
+            return s ? s.tag : null;
+        }
+        function updateParty() {
+            // Clamp to max per rules (stub: members max 12 for 6 rooms double)
+            document.getElementById('members').value = Math.min(+document.getElementById('members').value, 12);
+            document.getElementById('seniors').value = Math.min(+document.getElementById('seniors').value, 12);
+            document.getElementById('kidsU10').value = Math.min(+document.getElementById('kidsU10').value, 6); // No separate rooms
+            document.getElementById('parents').value = Math.min(+document.getElementById('parents').value, 12);
+            document.getElementById('tempA').value = Math.min(+document.getElementById('tempA').value, 6);
+            document.getElementById('tempK').value = Math.min(+document.getElementById('tempK').value, 6);
+            document.getElementById('group').value = Math.max(0, Math.min(+document.getElementById('group').value, 19));
+            if (state.party.group > 0 && state.party.group < 10) {
+                alert('Group min 10');
+                document.getElementById('group').value = 0;
+            }
+            state.party.members = +document.getElementById('members').value;
+            state.party.seniors = +document.getElementById('seniors').value;
+            state.party.kidsU10 = +document.getElementById('kidsU10').value;
+            state.party.parents = +document.getElementById('parents').value;
+            state.party.tempA = +document.getElementById('tempA').value;
+            state.party.tempK = +document.getElementById('tempK').value;
+            state.party.group = +document.getElementById('group').value;
+            // Rules check...
+            if (state.checkIn) {
+                const daysAhead = Math.ceil((state.checkIn - currentDate) / (1000*60*60*24));
+                let maxDays = 180;
+                const hasTemp = state.party.tempA + state.party.tempK + state.party.parents > 0;
+                const onlyTemp = state.party.members + state.party.seniors === 0;
+                if (onlyTemp) maxDays = 60;
+                else if (hasTemp) maxDays = 90;
+                if (daysAhead > maxDays) alert(data.policy.messages.window_exceeded_temp.replace('$1', maxDays.toString()));
+            }
+            const totalP = Object.values(state.party).reduce((a,b)=>a+b,0) - state.party.group; // Group separate
+            const isWknd = state.checkIn && isWeekend(state.checkIn);
+            const estRooms = Math.ceil(totalP / 2) + state.party.group;
+            const maxRooms = isWknd ? 3 : 6;
+            if (estRooms > maxRooms) alert(`Cap exceeded: ${isWknd ? 'Weekend max 3' : 'Weekday max 6'} (est. ${estRooms}).`);
+            updateSummary(); updateMeals();
+        }
+        function updateFilters() {
+            state.filters.wheel = +document.getElementById('wheel').value;
+            state.filters.pet = +document.getElementById('pet').value;
+            state.filters.ac = +document.getElementById('ac').value;
+            state.filters.single = +document.getElementById('single').value;
+            state.filters.quad = +document.getElementById('quad').value;
+            state.filters.groupR = +document.getElementById('groupR').value;
+            // Dynamic max based on room attributes
+            const wheelCount = data.rooms.filter(r => r.wheelchair).length;
+            const petCount = data.rooms.filter(r => r.pet).length;
+            const acCount = data.rooms.filter(r => r.ac).length;
+            const singleCount = data.rooms.filter(r => r.type === 'single').length;
+            const quadCount = data.rooms.filter(r => r.type === 'quad').length;
+            const groupCount = data.rooms.filter(r => r.group).length;
+            const selectedWheel = state.selected.filter(s => data.rooms.find(r=>r.room_no===s.room_no)?.wheelchair || false).length;
+            const selectedPet = state.selected.filter(s => data.rooms.find(r=>r.room_no===s.room_no)?.pet || false).length;
+            const selectedAc = state.selected.filter(s => data.rooms.find(r=>r.room_no===s.room_no)?.ac || false).length;
+            const selectedSingle = state.selected.filter(s => data.rooms.find(r=>r.room_no===s.room_no)?.type === 'single').length;
+            const selectedQuad = state.selected.filter(s => data.rooms.find(r=>r.room_no===s.room_no)?.type === 'quad').length;
+            const selectedGroupR = state.selected.filter(s => data.rooms.find(r=>r.room_no===s.room_no)?.group || false).length;
+            ['wheel','pet','ac','single','quad'].forEach(f => {
+                const sel = document.getElementById(f);
+                sel.innerHTML = '<option value="0">0</option>';
+                let maxF;
+                if (f === 'wheel') maxF = Math.max(0, wheelCount - selectedWheel);
+                else if (f === 'pet') maxF = Math.max(0, petCount - selectedPet);
+                else if (f === 'ac') maxF = Math.max(0, acCount - selectedAc);
+                else if (f === 'single') maxF = Math.max(0, singleCount - selectedSingle);
+                else maxF = Math.max(0, quadCount - selectedQuad);
+                for (let i = 1; i <= maxF; i++) sel.innerHTML += `<option value="${i}">${i}</option>`;
+                const val = +sel.value;
+                if (val > maxF) sel.value = maxF;
+            });
+            document.getElementById('groupR').innerHTML = '<option value="0">0</option>';
+            const maxGroup = Math.min(19, groupCount - selectedGroupR);
+            for (let i = 1; i <= maxGroup; i++) document.getElementById('groupR').innerHTML += `<option value="${i}">${i}</option>`;
+            const valG = +document.getElementById('groupR').value;
+            if (valG > maxGroup) document.getElementById('groupR').value = maxGroup;
+            const matching = getFilteredRooms().length;
+            document.getElementById('filterCounts').innerText = `Matching: ${matching} rooms`;
+            updateBlockChips();
+            updateSummary();
+        }
+        function getFilteredRooms() {
+            return data.rooms.filter(r =>
+                (state.filters.wheel === 0 || r.wheelchair) && (state.filters.pet === 0 || r.pet) &&
+                (state.filters.ac === 0 || r.ac) && (state.filters.single === 0 || r.type === 'single') &&
+                (state.filters.quad === 0 || r.type === 'quad') && (state.filters.groupR === 0 || r.group)
+            ).filter(r => !state.selected.some(s => s.room_no === r.room_no));
+        }
+        function updateBlockChips() {
+            const chips = document.getElementById('blockChips');
+            chips.innerHTML = '';
+            blocks.forEach(b => {
+                const count = getFilteredRooms().filter(r => r.block === b).length;
+                const btn = document.createElement('button'); btn.className = 'block-btn';
+                btn.innerText = `${b} (${count})`;
+                btn.onclick = () => showRooms(b);
+                chips.appendChild(btn);
+            });
+        }
+        function showRooms(block) {
+            const list = document.getElementById('roomList');
+            const avail = getFilteredRooms().filter(r => r.block === block);
+            list.innerHTML = `<h4>Rooms in ${block}:</h4>`;
+            avail.forEach(r => {
+                const div = document.createElement('div'); div.className = `room-item ${state.selected.some(s => s.room_no === r.room_no) ? 'selected-room' : ''}`;
+                div.innerHTML = `${r.room_no} ${state.checkOut && (state.checkOut - state.checkIn) / (1000*60*60*24) > 1 && Math.random()<0.1 ? '(Partial - Auto-chain)' : ''} <button onclick="selectRoom('${r.room_no}', '${block}')">Select</button>`;
+                list.appendChild(div);
+            });
+            if (avail.length === 0) list.innerHTML += '<p>No rooms available.</p>';
+        }
+        function selectRoom(roomNo, block) {
+            if (!state.selected.some(s => s.room_no === roomNo)) {
+                const room = data.rooms.find(r => r.room_no === roomNo);
+                state.selected.push({room_no: roomNo, block});
+                state.selectedRooms++;
+                updateBlockChips();
+                updateFilters();
+                updateSummary();
+                updateSelectedList();
+                alert(`Selected ${roomNo} in ${block}`);
+            }
+        }
+        function deselectRoom(roomNo) {
+            state.selected = state.selected.filter(s => s.room_no !== roomNo);
+            state.selectedRooms = state.selected.length;
+            updateBlockChips();
+            updateFilters();
+            updateSummary();
+            updateSelectedList();
+        }
+        function updateSelectedList() {
+            const list = document.getElementById('selectedRoomsList');
+            if (state.selected.length === 0) {
+                list.innerHTML = '<p>No rooms selected.</p>';
+                return;
+            }
+            list.innerHTML = '<h4>All Selected Rooms:</h4>';
+            state.selected.forEach(s => {
+                const room = data.rooms.find(r => r.room_no === s.room_no);
+                const div = document.createElement('div');
+                div.className = 'room-item selected-room';
+                div.innerHTML = `${s.block} - ${s.room_no} (${room ? room.type : 'unknown'}) <button onclick="deselectRoom('${s.room_no}')">Remove</button>`;
+                list.appendChild(div);
+            });
+        }
+        function updateMeals() {
+            state.veg = +document.getElementById('veg').value; state.nonveg = +document.getElementById('nonveg').value;
+            const total = Object.values(state.party).reduce((a,b)=>a+b,0);
+            if (state.veg + state.nonveg !== total) document.getElementById('mealsError').innerText = data.policy.messages.meals_mismatch;
+            else document.getElementById('mealsError').innerText = '';
+            updateSummary();
+        }
+        function updateSummary() {
+            const totalP = Object.values(state.party).reduce((a,b)=>a+b,0);
+            const nights = state.checkIn && state.checkOut ? Math.ceil((state.checkOut - state.checkIn) / (1000*60*60*24)) : 0;
+            document.getElementById('summaryDates').innerText = `${nights} nights`;
+            document.getElementById('summaryParty').innerText = `Occupants: Members ${state.party.members + state.party.seniors}, Dependants ${state.party.kidsU10 + state.party.parents} (incl. children & parents), Temp ${state.party.tempA + state.party.tempK}, Group ${state.party.group} | Total ${totalP}`;
+            document.getElementById('summaryRooms').innerText = `Rooms: ${state.selectedRooms} selected`;
+            document.getElementById('summaryFilters').innerText = `Filters: Wheelchair${state.filters.wheel} Pets${state.filters.pet} AC${state.filters.ac} Single${state.filters.single} 4Beds${state.filters.quad} GroupR${state.filters.groupR}`;
+            document.getElementById('summaryTotal').innerText = `Est. Total: ₹${totalP * 5250 * nights}`;
+            document.getElementById('roomsSelectedCount').innerText = state.selectedRooms;
+            const capacity = state.selected.reduce((acc, s) => {
+                const room = data.rooms.find(r => r.room_no === s.room_no);
+                return acc + (room?.type === 'double' ? 2 : room?.type === 'quad' ? 4 : 1);
+            }, 0);
+            document.getElementById('maxOccupancy').innerText = capacity;
+            document.getElementById('totalParty').innerText = totalP;
+            let occupancyOk = true;
+            let occupancyMsg = '';
+            if (totalP > capacity) {
+                occupancyMsg = 'Total occupants exceed room capacity!';
+                occupancyOk = false;
+            } else if (totalP < state.selectedRooms) {
+                occupancyMsg = 'At least one occupant per room required.';
+                occupancyOk = false;
+            } else {
+                occupancyMsg = 'OK';
+            }
+            document.getElementById('occupancyMsg').innerText = occupancyMsg;
+            state.accept = document.getElementById('accept').checked;
+            const valid = state.accept && totalP > 0 && state.checkIn && state.checkOut && (state.veg + state.nonveg === totalP) && occupancyOk;
+            document.getElementById('confirmBtn').disabled = !valid;
+        }
+        function toggleRules() {
+            const p = document.getElementById('rulesPanel'); p.style.display = p.style.display === 'none' ? 'block' : 'none';
+        }
+        function confirmBooking() {
+            alert('Booking confirmed! An email has been sent to you with details. Please reply to the mail if you have any clarifications before proceeding.');
+            console.log('Booking PDF Data:', state);
+            if (getSeasonTag(state.checkIn)) alert('Season: Courier signed form & ID 15 days in advance.');
+        }
+    </script>
+</body>
+</html>
