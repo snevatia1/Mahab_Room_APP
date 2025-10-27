@@ -31,6 +31,7 @@
         #roomList { max-height: 200px; overflow: auto; }
         .room-item { border: 1px solid #ddd; padding: 5px; margin: 2px; background: #f9f9f9; display: inline-block; min-width: 80px; }
         .selected-room { background: lightgreen; }
+        .partial-room { background: orange !important; color: white; }
         #selectedRoomsList { max-height: 150px; overflow: auto; border: 1px solid #ddd; padding: 5px; background: #f9f9f9; }
         .sticky-summary { position: sticky; bottom: 0; background: white; border-top: 2px solid #cc3333; padding: 15px; }
         button { background: #cc3333; color: white; border: none; padding: 5px 10px; cursor: pointer; margin: 2px; }
@@ -57,17 +58,20 @@
                     <div class="party-row">
                         <label>Member 21-64: <input type="number" id="members" min="0" value="0" onchange="updateParty()"></label>
                         <label>Member 65+: <input type="number" id="seniors" min="0" value="0" onchange="updateParty()"></label>
-                        <label>Children <10: <input type="number" id="kidsU10" min="0" value="0" onchange="updateParty()"></label>
+                        <label>Parents: <input type="number" id="parents" min="0" value="0" onchange="updateParty()"></label>
                     </div>
                     <div class="party-row">
-                        <label>Parents: <input type="number" id="parents" min="0" value="0" onchange="updateParty()"></label>
+                        <label>M Children 10-21: <input type="number" id="mChildren1021" min="0" value="0" onchange="updateParty()"></label>
+                        <label>M Children <10: <input type="number" id="kidsU10" min="0" value="0" onchange="updateParty()"></label>
+                    </div>
+                    <div class="party-row">
                         <label>Temp Adults: <input type="number" id="tempA" min="0" value="0" onchange="updateParty()"></label>
                         <label>Temp Kids 5-10: <input type="number" id="tempK" min="0" value="0" onchange="updateParty()"></label>
                     </div>
                     <div class="party-row">
                         <label>Group: <input type="number" id="group" min="10" max="19" value="0" onchange="updateParty()"></label>
                     </div>
-                    <p>Children (11–21) and Parents are billed as Temporary Members.</p>
+                    <p>Member children (10–21) and Parents are billed as Temporary Members.</p>
                 </div>
                 <div class="section">
                     <h3>Filters (# Rooms)</h3>
@@ -86,7 +90,7 @@
                 <div class="section">
                     <h3>Availability (After Filters & Selected)</h3>
                     <div id="blockChips"></div>
-                    <p>Click block for rooms. Partial: Auto-chain for spans.</p>
+                    <p>Click block for rooms. Partial availability shown in orange: Club will help in shifting to another room available. Suggestions for alternatives on other dates: Check nearby blocks for full-span rooms.</p>
                     <div id="roomList"></div>
                     <div id="selectedRoomsList"></div>
                 </div>
@@ -161,9 +165,12 @@
             {block:'New E',room_no:'E-6',type:'double',wheelchair:true,pet:false,ac:true,group:false},
             {block:'New E',room_no:'E-7',type:'double',wheelchair:true,pet:false,ac:true,group:false}
         ], dues: {123:0,234:20}, rules: 'The Club Mahabaleshwar – Room Booking Rules & Policies (Effective October 2025)... (full text from DOCX). Cancellation: Cancellations must be made 30 days in advance for full refund. Dress Code: Smart casual in common areas.' };
-        let state = { checkIn: null, checkOut: null, party: {members:0,seniors:0,kidsU10:0,parents:0,tempA:0,tempK:0,group:0}, filters: {wheel:0,pet:0,ac:0,single:0,quad:0,groupR:0}, verified: true, veg:0, nonveg:0, accept: false, selected: [], selectedRooms: 0 };
+        let state = { checkIn: null, checkOut: null, party: {members:0,seniors:0,parents:0,mChildren1021:0,kidsU10:0,tempA:0,tempK:0,group:0}, filters: {wheel:0,pet:0,ac:0,single:0,quad:0,groupR:0}, verified: true, veg:0, nonveg:0, accept: false, selected: [], selectedRooms: 0 };
         const currentDate = new Date('2025-10-27');
         const blocks = ['A', 'B', 'Old C', 'New C', 'D', 'Old E', 'New E'];
+        // Mock availability for demo: room -> date -> available (for partial)
+        const mockAvailability = {}; // e.g., { 'A-1': { '2025-10-28': true, '2025-10-29': false } }
+        data.rooms.forEach(r => mockAvailability[r.room_no] = {});
         fetch('data.json').then(r=>r.json()).then(d=>{data=d;init();}).catch(()=>{init();});
         function init() {
             document.getElementById('header').innerText = data.policy.messages.header;
@@ -251,11 +258,19 @@
             return s ? s.tag : null;
         }
         function updateParty() {
-            // Clamp to max per rules (stub: members max 12 for 6 rooms double)
-            document.getElementById('members').value = Math.min(+document.getElementById('members').value, 12);
-            document.getElementById('seniors').value = Math.min(+document.getElementById('seniors').value, 12);
-            document.getElementById('kidsU10').value = Math.min(+document.getElementById('kidsU10').value, 6); // No separate rooms
+            // Enforce total members + seniors <=2
+            let totalMembers = +document.getElementById('members').value + +document.getElementById('seniors').value;
+            if (totalMembers > 2) {
+                alert('Total Members (21-64 + 65+) cannot exceed 2.');
+                // Adjust to 2, prioritize seniors or something, but for now reset one
+                document.getElementById('members').value = Math.max(0, 2 - +document.getElementById('seniors').value);
+            }
+            // Clamp individuals
+            document.getElementById('members').value = Math.min(+document.getElementById('members').value, 2);
+            document.getElementById('seniors').value = Math.min(+document.getElementById('seniors').value, 2);
             document.getElementById('parents').value = Math.min(+document.getElementById('parents').value, 12);
+            document.getElementById('mChildren1021').value = Math.min(+document.getElementById('mChildren1021').value, 12);
+            document.getElementById('kidsU10').value = Math.min(+document.getElementById('kidsU10').value, 6);
             document.getElementById('tempA').value = Math.min(+document.getElementById('tempA').value, 6);
             document.getElementById('tempK').value = Math.min(+document.getElementById('tempK').value, 6);
             document.getElementById('group').value = Math.max(0, Math.min(+document.getElementById('group').value, 19));
@@ -265,8 +280,9 @@
             }
             state.party.members = +document.getElementById('members').value;
             state.party.seniors = +document.getElementById('seniors').value;
-            state.party.kidsU10 = +document.getElementById('kidsU10').value;
             state.party.parents = +document.getElementById('parents').value;
+            state.party.mChildren1021 = +document.getElementById('mChildren1021').value;
+            state.party.kidsU10 = +document.getElementById('kidsU10').value;
             state.party.tempA = +document.getElementById('tempA').value;
             state.party.tempK = +document.getElementById('tempK').value;
             state.party.group = +document.getElementById('group').value;
@@ -274,7 +290,7 @@
             if (state.checkIn) {
                 const daysAhead = Math.ceil((state.checkIn - currentDate) / (1000*60*60*24));
                 let maxDays = 180;
-                const hasTemp = state.party.tempA + state.party.tempK + state.party.parents > 0;
+                const hasTemp = state.party.tempA + state.party.tempK + state.party.parents + state.party.mChildren1021 > 0;
                 const onlyTemp = state.party.members + state.party.seniors === 0;
                 if (onlyTemp) maxDays = 60;
                 else if (hasTemp) maxDays = 90;
@@ -294,7 +310,7 @@
             state.filters.single = +document.getElementById('single').value;
             state.filters.quad = +document.getElementById('quad').value;
             state.filters.groupR = +document.getElementById('groupR').value;
-            // Dynamic max based on room attributes
+            // Dynamic max based on room attributes, enforce max during selection
             const wheelCount = data.rooms.filter(r => r.wheelchair).length;
             const petCount = data.rooms.filter(r => r.pet).length;
             const acCount = data.rooms.filter(r => r.ac).length;
@@ -318,13 +334,13 @@
                 else maxF = Math.max(0, quadCount - selectedQuad);
                 for (let i = 1; i <= maxF; i++) sel.innerHTML += `<option value="${i}">${i}</option>`;
                 const val = +sel.value;
-                if (val > maxF) sel.value = maxF;
+                if (val > maxF) sel.value = maxF.toString();
             });
             document.getElementById('groupR').innerHTML = '<option value="0">0</option>';
             const maxGroup = Math.min(19, groupCount - selectedGroupR);
             for (let i = 1; i <= maxGroup; i++) document.getElementById('groupR').innerHTML += `<option value="${i}">${i}</option>`;
             const valG = +document.getElementById('groupR').value;
-            if (valG > maxGroup) document.getElementById('groupR').value = maxGroup;
+            if (valG > maxGroup) document.getElementById('groupR').value = maxGroup.toString();
             const matching = getFilteredRooms().length;
             document.getElementById('filterCounts').innerText = `Matching: ${matching} rooms`;
             updateBlockChips();
@@ -352,9 +368,20 @@
             const list = document.getElementById('roomList');
             const avail = getFilteredRooms().filter(r => r.block === block);
             list.innerHTML = `<h4>Rooms in ${block}:</h4>`;
+            const isMultiNight = state.checkOut && (state.checkOut - state.checkIn) / (1000*60*60*24) > 1;
             avail.forEach(r => {
-                const div = document.createElement('div'); div.className = `room-item ${state.selected.some(s => s.room_no === r.room_no) ? 'selected-room' : ''}`;
-                div.innerHTML = `${r.room_no} ${state.checkOut && (state.checkOut - state.checkIn) / (1000*60*60*24) > 1 && Math.random()<0.1 ? '(Partial - Auto-chain)' : ''} <button onclick="selectRoom('${r.room_no}', '${block}')">Select</button>`;
+                let partial = false;
+                if (isMultiNight) {
+                    // Mock partial availability
+                    const nights = Math.ceil((state.checkOut - state.checkIn) / (1000*60*60*24));
+                    partial = Math.random() < 0.3; // 30% chance partial
+                }
+                const div = document.createElement('div'); 
+                div.className = `room-item ${state.selected.some(s => s.room_no === r.room_no) ? 'selected-room' : ''} ${partial ? 'partial-room' : ''}`;
+                let msg = '';
+                if (partial) msg = ' (Partial - Club will help shift)';
+                else if (isMultiNight && Math.random()<0.1) msg = ' (Full span)';
+                div.innerHTML = `${r.room_no}${msg} <button onclick="selectRoom('${r.room_no}', '${block}')">Select</button>`;
                 list.appendChild(div);
             });
             if (avail.length === 0) list.innerHTML += '<p>No rooms available.</p>';
@@ -404,11 +431,16 @@
         function updateSummary() {
             const totalP = Object.values(state.party).reduce((a,b)=>a+b,0);
             const nights = state.checkIn && state.checkOut ? Math.ceil((state.checkOut - state.checkIn) / (1000*60*60*24)) : 0;
-            document.getElementById('summaryDates').innerText = `${nights} nights`;
-            document.getElementById('summaryParty').innerText = `Occupants: Members ${state.party.members + state.party.seniors}, Dependants ${state.party.kidsU10 + state.party.parents} (incl. children & parents), Temp ${state.party.tempA + state.party.tempK}, Group ${state.party.group} | Total ${totalP}`;
+            document.getElementById('summaryDates').innerText = `${nights} nights from ${state.checkIn ? state.checkIn.toLocaleDateString() : '?'} to ${state.checkOut ? state.checkOut.toLocaleDateString() : '?'}`;
+            const membersTotal = state.party.members + state.party.seniors;
+            const dependants = state.party.parents + state.party.mChildren1021 + state.party.kidsU10;
+            const temps = state.party.tempA + state.party.tempK;
+            document.getElementById('summaryParty').innerText = `Members: ${membersTotal} (21-64: ${state.party.members}, 65+: ${state.party.seniors}), Dependants: ${dependants} (Parents: ${state.party.parents}, M Ch 10-21: ${state.party.mChildren1021}, Ch <10: ${state.party.kidsU10}), Temp Members: ${temps}, Group: ${state.party.group} | Total: ${totalP}`;
             document.getElementById('summaryRooms').innerText = `Rooms: ${state.selectedRooms} selected`;
             document.getElementById('summaryFilters').innerText = `Filters: Wheelchair${state.filters.wheel} Pets${state.filters.pet} AC${state.filters.ac} Single${state.filters.single} 4Beds${state.filters.quad} GroupR${state.filters.groupR}`;
-            document.getElementById('summaryTotal').innerText = `Est. Total: ₹${totalP * 5250 * nights}`;
+            // Stub tariff: ₹5250 per person per night, enhance later
+            const baseRate = 5250;
+            document.getElementById('summaryTotal').innerText = `Est. Total: ₹${totalP * baseRate * nights} (base rate; adjust for seasons/tariffs)`;
             document.getElementById('roomsSelectedCount').innerText = state.selectedRooms;
             const capacity = state.selected.reduce((acc, s) => {
                 const room = data.rooms.find(r => r.room_no === s.room_no);
